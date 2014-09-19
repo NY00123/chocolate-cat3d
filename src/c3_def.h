@@ -83,8 +83,8 @@
 #define WEST	3
 
 #define SIGN(x) ((x)>0?1:-1)
-#define ABS(x) ((int)(x)>0?(x):-(x))
-#define LABS(x) ((long)(x)>0?(x):-(x))
+#define ABS(x) ((id0_int_t)(x)>0?(x):-(x))
+#define LABS(x) ((id0_long_t)(x)>0?(x):-(x))
 
 #define	MAXSCALE	(VIEWWIDTH/2)
 
@@ -120,16 +120,16 @@ enum bonusnumbers {B_BOLT,B_NUKE,B_POTION,B_RKEY,B_YKEY,B_GKEY,B_BKEY,B_SCROLL1,
 enum {BLANKCHAR=9,BOLTCHAR,NUKECHAR,POTIONCHAR,KEYCHARS,SCROLLCHARS=17,
 	NUMBERCHARS=25};
 
-typedef long fixed;
+typedef id0_long_t fixed;
 
-typedef struct {int x,y;} tilept;
+typedef struct {id0_int_t x,y;} tilept;
 typedef struct {fixed x,y;} globpt;
 
 typedef struct
 {
-  int	x1,x2,leftclip,rightclip;// first pixel of wall (may not be visable)
-  unsigned	height1,height2,color,walllength,side;
-	long	planecoord;
+  id0_int_t	x1,x2,leftclip,rightclip;// first pixel of wall (may not be visable)
+  id0_unsigned_t	height1,height2,color,walllength,side;
+	id0_long_t	planecoord;
 } walltype;
 
 typedef enum
@@ -143,8 +143,8 @@ typedef enum {north,east,south,west,northeast,southeast,southwest,
 
 typedef struct	statestruct
 {
-	int		shapenum;
-	int		tictime;
+	id0_int_t		shapenum;
+	id0_int_t		tictime;
 	void	(*think) ();
 	struct	statestruct	*next;
 } statetype;
@@ -153,39 +153,39 @@ typedef struct	statestruct
 typedef struct objstruct
 {
   enum {no,yes}	active;
-  int		ticcount;
+  id0_int_t		ticcount;
   classtype	obclass;
   statetype	*state;
 
-  boolean	shootable;
-  boolean	tileobject;		// true if entirely inside one tile
+  id0_boolean_t	shootable;
+  id0_boolean_t	tileobject;		// true if entirely inside one tile
 
-  long		distance;
+  id0_long_t		distance;
   dirtype	dir;
   fixed 	x,y;
-  unsigned	tilex,tiley;
-  int	 	viewx;
-  unsigned	viewheight;
+  id0_unsigned_t	tilex,tiley;
+  id0_int_t	 	viewx;
+  id0_unsigned_t	viewheight;
 
-  int 		angle;
-  int		hitpoints;
-  long		speed;
+  id0_int_t 		angle;
+  id0_int_t		hitpoints;
+  id0_long_t		speed;
 
-  unsigned	size;			// global radius for hit rect calculation
+  id0_unsigned_t	size;			// global radius for hit rect calculation
   fixed		xl,xh,yl,yh;	// hit rectangle
 
-  int		temp1,temp2;
+  id0_int_t		temp1,temp2;
   struct	objstruct	*next,*prev;
 } objtype;
 
 
 typedef	struct
 {
-	int		difficulty;
-	int		mapon;
-	int		bolts,nukes,potions,keys[4],scrolls[8];
-	long	score;
-	int		body,shotpower;
+	id0_int_t		difficulty;
+	id0_int_t		mapon;
+	id0_int_t		bolts,nukes,potions,keys[4],scrolls[8];
+	id0_long_t	score;
+	id0_int_t		body,shotpower;
 } gametype;
 
 typedef	enum	{ex_stillplaying,ex_died,ex_warped,ex_resetgame
@@ -200,24 +200,24 @@ typedef	enum	{ex_stillplaying,ex_died,ex_warped,ex_resetgame
 =============================================================================
 */
 
-extern	char		str[80],str2[20];
-extern	unsigned	tedlevelnum;
-extern	boolean		tedlevel;
+extern	id0_char_t		str[80],str2[20];
+extern	id0_unsigned_t	tedlevelnum;
+extern	id0_boolean_t		tedlevel;
 extern	gametype	gamestate;
 extern	exittype	playstate;
 
 
 void NewGame (void);
-boolean	SaveTheGame(int file);
-boolean	LoadTheGame(int file);
+id0_boolean_t	SaveTheGame(id0_int_t file);
+id0_boolean_t	LoadTheGame(id0_int_t file);
 void ResetGame(void);
 void ShutdownId (void);
 void InitGame (void);
-void Quit (char *error);
+void Quit (id0_char_t *error);
 void TEDDeath(void);
 void DemoLoop (void);
-void SetupScalePic (unsigned picnum);
-void SetupScaleWall (unsigned picnum);
+void SetupScalePic (id0_unsigned_t picnum);
+void SetupScaleWall (id0_unsigned_t picnum);
 void SetupScaling (void);
 void main (void);
 
@@ -229,9 +229,9 @@ void main (void);
 =============================================================================
 */
 
-extern	unsigned	latchpics[NUMLATCHPICS];
-extern	unsigned	tileoffsets[NUMTILE16];
-extern	unsigned	textstarts[27];
+extern	id0_unsigned_t	latchpics[NUMLATCHPICS];
+extern	id0_unsigned_t	tileoffsets[NUMTILE16];
+extern	id0_unsigned_t	textstarts[27];
 
 
 #define	L_CHARS		0
@@ -249,9 +249,9 @@ void Died (void);
 void NormalScreen (void);
 void DrawPlayScreen (void);
 void LoadLatchMem (void);
-void FizzleFade (unsigned source, unsigned dest,
-	unsigned width,unsigned height, boolean abortable);
-void FizzleOut (int showlevel);
+void FizzleFade (id0_unsigned_t source, id0_unsigned_t dest,
+	id0_unsigned_t width,id0_unsigned_t height, id0_boolean_t abortable);
+void FizzleOut (id0_int_t showlevel);
 void FreeUpMemory (void);
 void GameLoop (void);
 
@@ -265,34 +265,34 @@ void GameLoop (void);
 */
 
 extern	ControlInfo	c;
-extern	boolean		running,slowturn;
+extern	id0_boolean_t		running,slowturn;
 
-extern	int			bordertime;
+extern	id0_int_t			bordertime;
 
-extern	byte		tilemap[MAPSIZE][MAPSIZE];
+extern	id0_byte_t		tilemap[MAPSIZE][MAPSIZE];
 extern	objtype		*actorat[MAPSIZE][MAPSIZE];
-extern	byte		spotvis[MAPSIZE][MAPSIZE];
+extern	id0_byte_t		spotvis[MAPSIZE][MAPSIZE];
 
 extern	objtype 	objlist[MAXACTORS],*new,*obj,*player;
 
-extern	unsigned	farmapylookup[MAPSIZE];
-extern	byte		*nearmapylookup[MAPSIZE];
-extern	byte		update[];
+extern	id0_unsigned_t	farmapylookup[MAPSIZE];
+extern	id0_byte_t		*nearmapylookup[MAPSIZE];
+extern	id0_byte_t		update[];
 
-extern	boolean		godmode,singlestep;
-extern	int			extravbls;
+extern	id0_boolean_t		godmode,singlestep;
+extern	id0_int_t			extravbls;
 
-extern	int			mousexmove,mouseymove;
-extern	int			pointcount,pointsleft;
+extern	id0_int_t			mousexmove,mouseymove;
+extern	id0_int_t			pointcount,pointsleft;
 
 
-void CenterWindow(word w,word h);
+void CenterWindow(id0_word_t w,id0_word_t h);
 void DebugMemory (void);
 void PicturePause (void);
-int  DebugKeys (void);
+id0_int_t  DebugKeys (void);
 void CheckKeys (void);
 void InitObjList (void);
-void GetNewObj (boolean usedummy);
+void GetNewObj (id0_boolean_t usedummy);
 void RemoveObj (objtype *gone);
 void PollControlls (void);
 void PlayLoop (void);
@@ -306,14 +306,14 @@ void PlayLoop (void);
 =============================================================================
 */
 
-void SpawnNewObj (unsigned x, unsigned y, statetype *state, unsigned size);
-void SpawnNewObjFrac (long x, long y, statetype *state, unsigned size);
-boolean CheckHandAttack (objtype *ob);
+void SpawnNewObj (id0_unsigned_t x, id0_unsigned_t y, statetype *state, id0_unsigned_t size);
+void SpawnNewObjFrac (id0_long_t x, id0_long_t y, statetype *state, id0_unsigned_t size);
+id0_boolean_t CheckHandAttack (objtype *ob);
 void T_DoDamage (objtype *ob);
-boolean Walk (objtype *ob);
-void ChaseThink (objtype *obj, boolean diagonal);
-void MoveObj (objtype *ob, long move);
-boolean Chase (objtype *ob, boolean diagonal);
+id0_boolean_t Walk (objtype *ob);
+void ChaseThink (objtype *obj, id0_boolean_t diagonal);
+void MoveObj (objtype *ob, id0_long_t move);
+id0_boolean_t Chase (objtype *ob, id0_boolean_t diagonal);
 
 extern	dirtype opposite[9];
 
@@ -325,15 +325,15 @@ extern	dirtype opposite[9];
 =============================================================================
 */
 
-int FollowTrace (fixed tracex, fixed tracey, long deltax, long deltay, int max);
-int BackTrace (int finish);
+id0_int_t FollowTrace (fixed tracex, fixed tracey, id0_long_t deltax, id0_long_t deltay, id0_int_t max);
+id0_int_t BackTrace (id0_int_t finish);
 void ForwardTrace (void);
-int FinishWall (void);
+id0_int_t FinishWall (void);
 void InsideCorner (void);
 void OutsideCorner (void);
 void FollowWalls (void);
 
-extern	boolean	aborttrace;
+extern	id0_boolean_t	aborttrace;
 
 /*
 =============================================================================
@@ -354,30 +354,30 @@ extern	tilept	tile,lasttile,focal,left,mid,right;
 
 extern	globpt	edge,view;
 
-extern	unsigned screenloc[3];
-extern	unsigned freelatch;
+extern	id0_unsigned_t screenloc[3];
+extern	id0_unsigned_t freelatch;
 
-extern	int screenpage;
+extern	id0_int_t screenpage;
 
-extern	boolean		fizzlein;
+extern	id0_boolean_t		fizzlein;
 
-extern	long lasttimecount;
+extern	id0_long_t lasttimecount;
 
-extern	int firstangle,lastangle;
+extern	id0_int_t firstangle,lastangle;
 
 extern	fixed prestep;
 
-extern	int traceclip,tracetop;
+extern	id0_int_t traceclip,tracetop;
 
 extern	fixed sintable[ANGLES+ANGLES/4],*costable;
 
 extern	fixed	viewx,viewy,viewsin,viewcos;			// the focal point
-extern	int	viewangle;
+extern	id0_int_t	viewangle;
 
 extern	fixed scale,scaleglobal;
-extern	unsigned slideofs;
+extern	id0_unsigned_t slideofs;
 
-extern	int zbuffer[VIEWXH+1];
+extern	id0_int_t zbuffer[VIEWXH+1];
 
 extern	walltype	walls[MAXWALLS],*leftwall,*rightwall;
 
@@ -385,27 +385,27 @@ extern	walltype	walls[MAXWALLS],*leftwall,*rightwall;
 extern	fixed	tileglobal;
 extern	fixed	focallength;
 extern	fixed	mindist;
-extern	int		viewheight;
+extern	id0_int_t		viewheight;
 extern	fixed scale;
 
-extern	int	walllight1[NUMFLOORS];
-extern	int	walldark1[NUMFLOORS];
-extern	int	walllight2[NUMFLOORS];
-extern	int	walldark2[NUMFLOORS];
+extern	id0_int_t	walllight1[NUMFLOORS];
+extern	id0_int_t	walldark1[NUMFLOORS];
+extern	id0_int_t	walllight2[NUMFLOORS];
+extern	id0_int_t	walldark2[NUMFLOORS];
 
 //==========================================================================
 
-void	DrawLine (int xl, int xh, int y,int color);
+void	DrawLine (id0_int_t xl, id0_int_t xh, id0_int_t y,id0_int_t color);
 void	DrawWall (walltype *wallptr);
-void	TraceRay (unsigned angle);
+void	TraceRay (id0_unsigned_t angle);
 fixed	FixedByFrac (fixed a, fixed b);
-void	TransformPoint (fixed gx, fixed gy, int *screenx, unsigned *screenheight);
+void	TransformPoint (fixed gx, fixed gy, id0_int_t *screenx, id0_unsigned_t *screenheight);
 fixed	TransformX (fixed gx, fixed gy);
-int	FollowTrace (fixed tracex, fixed tracey, long deltax, long deltay, int max);
+id0_int_t	FollowTrace (fixed tracex, fixed tracey, id0_long_t deltax, id0_long_t deltay, id0_int_t max);
 void	ForwardTrace (void);
-int	FinishWall (void);
-int	TurnClockwise (void);
-int	TurnCounterClockwise (void);
+id0_int_t	FinishWall (void);
+id0_int_t	TurnClockwise (void);
+id0_int_t	TurnCounterClockwise (void);
 void	FollowWall (void);
 
 void	NewScene (void);
@@ -425,36 +425,36 @@ void	BuildTables (void);
 
 typedef struct
 {
-	unsigned	codeofs[65];
-	unsigned	start[65];
-	unsigned	width[65];
-	byte		code[];
+	id0_unsigned_t	codeofs[65];
+	id0_unsigned_t	start[65];
+	id0_unsigned_t	width[65];
+	id0_byte_t		code[];
 }	t_compscale;
 
 typedef struct
 {
-	unsigned	width;
-	unsigned	codeofs[64];
+	id0_unsigned_t	width;
+	id0_unsigned_t	codeofs[64];
 }	t_compshape;
 
 
-extern unsigned	scaleblockwidth,
+extern id0_unsigned_t	scaleblockwidth,
 		scaleblockheight,
 		scaleblockdest;
 
-extern	byte	plotpix[8];
-extern	byte	bitmasks1[8][8];
-extern	byte	bitmasks2[8][8];
+extern	id0_byte_t	plotpix[8];
+extern	id0_byte_t	bitmasks1[8][8];
+extern	id0_byte_t	bitmasks2[8][8];
 
 
-extern	t_compscale _seg *scaledirectory[MAXSCALE+1];
-extern	t_compshape _seg *shapedirectory[NUMSCALEPICS];
+extern	t_compscale id0_seg *scaledirectory[MAXSCALE+1];
+extern	t_compshape id0_seg *shapedirectory[NUMSCALEPICS];
 extern	memptr			walldirectory[NUMSCALEWALLS];
-extern	unsigned	shapesize[MAXSCALE+1];
+extern	id0_unsigned_t	shapesize[MAXSCALE+1];
 
-void 		DeplanePic (int picnum);
-void ScaleShape (int xcenter, t_compshape _seg *compshape, unsigned scale);
-unsigned	BuildCompShape (t_compshape _seg **finalspot);
+void 		DeplanePic (id0_int_t picnum);
+void ScaleShape (id0_int_t xcenter, t_compshape id0_seg *compshape, id0_unsigned_t scale);
+id0_unsigned_t	BuildCompShape (t_compshape id0_seg **finalspot);
 
 
 /*
@@ -465,15 +465,15 @@ unsigned	BuildCompShape (t_compshape _seg **finalspot);
 =============================================================================
 */
 
-extern	unsigned	wallheight	[VIEWWIDTH];
-extern	unsigned	wallwidth	[VIEWWIDTH];
-extern	unsigned	wallseg		[VIEWWIDTH];
-extern	unsigned	wallofs		[VIEWWIDTH];
-extern	unsigned	screenbyte	[VIEWWIDTH];
-extern	unsigned	screenbit	[VIEWWIDTH];
-extern	unsigned	bitmasks	[64];
+extern	id0_unsigned_t	wallheight	[VIEWWIDTH];
+extern	id0_unsigned_t	wallwidth	[VIEWWIDTH];
+extern	id0_unsigned_t	wallseg		[VIEWWIDTH];
+extern	id0_unsigned_t	wallofs		[VIEWWIDTH];
+extern	id0_unsigned_t	screenbyte	[VIEWWIDTH];
+extern	id0_unsigned_t	screenbit	[VIEWWIDTH];
+extern	id0_unsigned_t	bitmasks	[64];
 
-extern	long		wallscalecall;
+extern	id0_long_t		wallscalecall;
 
 void	ScaleWalls (void);
 
@@ -487,9 +487,9 @@ void	ScaleWalls (void);
 
 #define MAXHANDHEIGHT	72
 
-extern	long	lastnuke;
-extern	int		handheight;
-extern	int		boltsleft;
+extern	id0_long_t	lastnuke;
+extern	id0_int_t		handheight;
+extern	id0_int_t		boltsleft;
 
 /*
 =============================================================================

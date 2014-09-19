@@ -45,12 +45,10 @@
 
 #pragma hdrstop		// Wierdo thing with MUSE
 
-#include <dos.h>
-
 #ifdef	_MUSE_      // Will be defined in ID_Types.h
-#include "ID_SD.h"
+#include "id_sd.h"
 #else
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #endif
 #pragma	hdrstop
 #pragma	warn	-pia
@@ -63,60 +61,63 @@
 #define	readstat()	inportb(0x388)
 
 //	Global variables
-	boolean		SoundSourcePresent,SoundBlasterPresent,AdLibPresent,
+	id0_boolean_t		SoundSourcePresent,SoundBlasterPresent,AdLibPresent,
 				NeedsDigitized,NeedsMusic;
 	SDMode		SoundMode;
 	SMMode		MusicMode;
-	longword	TimeCount;
-	word		HackCount;
-	word		*SoundTable;	// Really * _seg *SoundTable, but that don't work
-	boolean		ssIsTandy;
-	word		ssPort = 2;
+
+	// NEVER accessed directly now - done from backend via functions
+	//id0_longword_t	TimeCount;
+
+	id0_word_t		HackCount;
+	id0_word_t		*SoundTable;	// Really * id0_seg *SoundTable, but that don't work
+	id0_boolean_t		ssIsTandy;
+	id0_word_t		ssPort = 2;
 
 //	Internal variables
-static	boolean			SD_Started;
-static	boolean			TimerDone;
-static	word			TimerVal,TimerDelay10,TimerDelay25,TimerDelay100;
-static	longword		TimerDivisor,TimerCount;
-static	char			*ParmStrings[] =
+static	id0_boolean_t			SD_Started;
+//static	id0_boolean_t			TimerDone;
+//static	id0_word_t			TimerVal,TimerDelay10,TimerDelay25,TimerDelay100;
+//static	id0_longword_t		TimerDivisor,TimerCount;
+static	id0_char_t			*ParmStrings[] =
 						{
 							"noal",
-							nil
+							id0_nil_t
 						};
 static	void			(*SoundUserHook)(void);
-static	word			SoundNumber,SoundPriority;
-static	void interrupt	(*t0OldService)(void);
-//static	word			t0CountTable[] = {8,8,8,8,40,40};
-static	long			LocalTime;
+static	id0_word_t			SoundNumber,SoundPriority;
+//static	void interrupt	(*t0OldService)(void);
+//static	id0_word_t			t0CountTable[] = {8,8,8,8,40,40};
+//static	id0_long_t			LocalTime;
 
 //	PC Sound variables
-static	byte			pcLastSample,far *pcSound;
-static	longword		pcLengthLeft;
-static	word			pcSoundLookup[255];
+static	id0_byte_t			pcLastSample,id0_far *pcSound;
+static	id0_longword_t		pcLengthLeft;
+static	id0_word_t			pcSoundLookup[255];
 
 //	AdLib variables
-static	boolean			alNoCheck;
-static	byte			far *alSound;
-static	word			alBlock;
-static	longword		alLengthLeft;
-static	longword		alTimeCount;
+static	id0_boolean_t			alNoCheck;
+static	id0_byte_t			id0_far *alSound;
+static	id0_word_t			alBlock;
+static	id0_longword_t		alLengthLeft;
+static	id0_longword_t		alTimeCount;
 static	Instrument		alZeroInst;
 
 // This table maps channel numbers to carrier and modulator op cells
-static	byte			carriers[9] =  { 3, 4, 5,11,12,13,19,20,21},
+static	id0_byte_t			carriers[9] =  { 3, 4, 5,11,12,13,19,20,21},
 						modifiers[9] = { 0, 1, 2, 8, 9,10,16,17,18},
 // This table maps percussive voice numbers to op cells
 						pcarriers[5] = {19,0xff,0xff,0xff,0xff},
 						pmodifiers[5] = {16,17,18,20,21};
 
 //	Sequencer variables
-static	boolean			sqActive;
-static	word			alFXReg;
+static	id0_boolean_t			sqActive;
+static	id0_word_t			alFXReg;
 static	ActiveTrack		*tracks[sqMaxTracks],
 						mytracks[sqMaxTracks];
-static	word			sqMode,sqFadeStep;
-static	word			far *sqHack,far *sqHackPtr,sqHackLen,sqHackSeqLen;
-static	long			sqHackTime;
+static	id0_word_t			sqMode,sqFadeStep;
+static	id0_word_t			id0_far *sqHack,id0_far *sqHackPtr,sqHackLen,sqHackSeqLen;
+static	id0_long_t			sqHackTime;
 
 //	Internal routines
 
@@ -127,8 +128,10 @@ static	long			sqHackTime;
 ///////////////////////////////////////////////////////////////////////////
 #pragma	argsused
 static void
-SDL_SetTimer0(word speed)
+SDL_SetTimer0(id0_word_t speed)
 {
+	BE_SDL_SetTimer(speed, (MusicMode == smm_AdLib));
+#if 0
 #ifndef TPROF	// If using Borland's profiling, don't screw with the timer
 	outportb(0x43,0x36);				// Change timer 0
 	outportb(0x40,speed);
@@ -136,6 +139,7 @@ SDL_SetTimer0(word speed)
 	TimerDivisor = speed;
 #else
 	TimerDivisor = 0x10000;
+#endif
 #endif
 }
 
@@ -146,11 +150,12 @@ SDL_SetTimer0(word speed)
 //
 ///////////////////////////////////////////////////////////////////////////
 static void
-SDL_SetIntsPerSec(word ints)
+SDL_SetIntsPerSec(id0_word_t ints)
 {
 	SDL_SetTimer0(1192030 / ints);
 }
 
+#if 0
 ///////////////////////////////////////////////////////////////////////////
 //
 //	SDL_TimingService() - Used by SDL_InitDelay() to determine a timing
@@ -174,8 +179,8 @@ SDL_TimingService(void)
 static void
 SDL_InitDelay(void)
 {
-	int		i;
-	word	timer;
+	id0_int_t		i;
+	id0_word_t	timer;
 
 	setvect(8,SDL_TimingService);		// Set to my timer 0 ISR
 
@@ -214,7 +219,7 @@ done:
 //
 ///////////////////////////////////////////////////////////////////////////
 static void
-SDL_Delay(word delay)
+SDL_Delay(id0_word_t delay)
 {
 	if (!delay)
 		return;
@@ -226,6 +231,7 @@ asm	jnz		done
 asm	loop	loop
 done:;
 }
+#endif
 
 //
 //	PC Sound code
@@ -241,16 +247,18 @@ void
 #else
 static void
 #endif
-SDL_PCPlaySound(PCSound far *sound)
+SDL_PCPlaySound(PCSound id0_far *sound)
 {
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	pcLastSample = -1;
 	pcLengthLeft = sound->common.length;
 	pcSound = sound->data;
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -265,16 +273,22 @@ static void
 #endif
 SDL_PCStopSound(void)
 {
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
-	(long)pcSound = 0;
+	pcSound = 0;
+	//(id0_long_t)pcSound = 0;
 
+	BE_SDL_PCSpeakerOff();
+#if 0
 asm	in	al,0x61		  	// Turn the speaker off
 asm	and	al,0xfd			// ~2
 asm	out	0x61,al
+#endif
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -285,42 +299,50 @@ asm	popf
 static void
 SDL_PCService(void)
 {
-	byte	s;
-	word	t;
+	id0_byte_t	s;
+	id0_word_t	t;
 
 	if (pcSound)
 	{
 		s = *pcSound++;
 		if (s != pcLastSample)
 		{
-		asm	pushf
-		asm	cli
+			BE_SDL_LockAudioRecursively();
+//		asm	pushf
+//		asm	cli
 
 			pcLastSample = s;
 			if (s)					// We have a frequency!
 			{
 				t = pcSoundLookup[s];
+				BE_SDL_PCSpeakerOn(t);
+#if 0
 			asm	mov	bx,[t]
 
 			asm	mov	al,0xb6			// Write to channel 2 (speaker) timer
 			asm	out	43h,al
 			asm	mov	al,bl
-			asm	out	42h,al			// Low byte
+			asm	out	42h,al			// Low id0_byte_t
 			asm	mov	al,bh
-			asm	out	42h,al			// High byte
+			asm	out	42h,al			// High id0_byte_t
 
 			asm	in	al,0x61			// Turn the speaker & gate on
 			asm	or	al,3
 			asm	out	0x61,al
+#endif
 			}
 			else					// Time for some silence
 			{
+				BE_SDL_PCSpeakerOff();
+#if 0
 			asm	in	al,0x61		  	// Turn the speaker & gate off
 			asm	and	al,0xfc			// ~3
 			asm	out	0x61,al
+#endif
 			}
 
-		asm	popf
+			BE_SDL_UnlockAudioRecursively();
+//		asm	popf
 		}
 
 		if (!(--pcLengthLeft))
@@ -339,16 +361,21 @@ SDL_PCService(void)
 static void
 SDL_ShutPC(void)
 {
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	pcSound = 0;
 
+	BE_SDL_PCSpeakerOff();
+#if 0
 asm	in	al,0x61		  	// Turn the speaker & gate off
 asm	and	al,0xfc			// ~3
 asm	out	0x61,al
+#endif
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 // 	AdLib Code
@@ -359,8 +386,10 @@ asm	popf
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-alOut(byte n,byte b)
+alOut(id0_byte_t n,id0_byte_t b)
 {
+	BE_SDL_ALOut(n, b);
+#if 0
 asm	pushf
 asm	cli
 
@@ -382,6 +411,7 @@ asm	mov		dx,0x389
 asm	mov		al,[b]
 asm	out		dx,al
 
+	BE_SDL_UnlockAudioRecursively();
 asm	popf
 
 #if 0
@@ -427,6 +457,7 @@ asm	in	al, dx
 asm	in	al, dx
 asm	in	al, dx
 #endif
+#endif
 }
 
 #if 0
@@ -436,9 +467,9 @@ asm	in	al, dx
 //
 ///////////////////////////////////////////////////////////////////////////
 static void
-SDL_SetInstrument(int track,int which,Instrument far *inst,boolean percussive)
+SDL_SetInstrument(id0_int_t track,id0_int_t which,Instrument id0_far *inst,id0_boolean_t percussive)
 {
-	byte		c,m;
+	id0_byte_t		c,m;
 
 	if (percussive)
 	{
@@ -487,19 +518,22 @@ static void
 #endif
 SDL_ALStopSound(void)
 {
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
-	(long)alSound = 0;
+	alSound = 0;
+	//(id0_long_t)alSound = 0;
 	alOut(alFreqH + 0,0);
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 static void
-SDL_AlSetFXInst(Instrument far *inst)
+SDL_AlSetFXInst(Instrument id0_far *inst)
 {
-	byte		c,m;
+	id0_byte_t		c,m;
 
 	m = modifiers[0];
 	c = carriers[0];
@@ -527,14 +561,15 @@ void
 #else
 static void
 #endif
-SDL_ALPlaySound(AdLibSound far *sound)
+SDL_ALPlaySound(AdLibSound id0_far *sound)
 {
-	Instrument	far *inst;
+	Instrument	id0_far *inst;
 
 	SDL_ALStopSound();
 
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	alLengthLeft = sound->common.length;
 	alSound = sound->data;
@@ -543,13 +578,15 @@ asm	cli
 
 	if (!(inst->mSus | inst->cSus))
 	{
-	asm	popf
+		BE_SDL_UnlockAudioRecursively();
+//	asm	popf
 		Quit("SDL_ALPlaySound() - Bad instrument");
 	}
 
 	SDL_AlSetFXInst(inst);
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -560,7 +597,7 @@ asm	popf
 static void
 SDL_ALSoundService(void)
 {
-	byte	s;
+	id0_byte_t	s;
 
 	if (alSound)
 	{
@@ -575,7 +612,8 @@ SDL_ALSoundService(void)
 
 		if (!(--alLengthLeft))
 		{
-			(long)alSound = 0;
+			alSound = 0;
+			//(id0_long_t)alSound = 0;
 			alOut(alFreqH + 0,0);
 			SDL_SoundFinished();
 		}
@@ -599,8 +637,8 @@ SDL_SelectMeasure(ActiveTrack *track)
 static void
 SDL_ALService(void)
 {
-	byte	a,v;
-	word	w;
+	id0_byte_t	a,v;
+	id0_word_t	w;
 
 	if (!sqActive)
 		return;
@@ -609,16 +647,21 @@ SDL_ALService(void)
 	{
 		w = *sqHackPtr++;
 		sqHackTime = alTimeCount + *sqHackPtr++;
+		// TODO/FIXME: Endianness??
+		a = *((id0_byte_t *)&w);
+		v = *((id0_byte_t *)&w + 1);
+#if 0
 	asm	mov	dx,[w]
 	asm	mov	[a],dl
 	asm	mov	[v],dh
+#endif
 		alOut(a,v);
 		sqHackLen -= 4;
 	}
 	alTimeCount++;
 	if (!sqHackLen)
 	{
-		sqHackPtr = (word far *)sqHack;
+		sqHackPtr = (id0_word_t id0_far *)sqHack;
 		sqHackLen = sqHackSeqLen;
 		alTimeCount = sqHackTime = 0;
 	}
@@ -632,15 +675,17 @@ SDL_ALService(void)
 static void
 SDL_ShutAL(void)
 {
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	alOut(alEffects,0);
 	alOut(alFreqH + 0,0);
 	SDL_AlSetFXInst(&alZeroInst);
 	alSound = 0;
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -651,16 +696,18 @@ asm	popf
 static void
 SDL_CleanAL(void)
 {
-	int	i;
+	id0_int_t	i;
 
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	alOut(alEffects,0);
 	for (i = 1;i < 0xf5;i++)
 		alOut(i,0);
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -682,24 +729,29 @@ SDL_StartAL(void)
 //		emulating an AdLib) present
 //
 ///////////////////////////////////////////////////////////////////////////
-static boolean
+static id0_boolean_t
 SDL_DetectAdLib(void)
 {
-	byte	status1,status2;
-	int		i;
+	//id0_byte_t	status1,status2;
+	id0_int_t		i;
 
 	alOut(4,0x60);	// Reset T1 & T2
 	alOut(4,0x80);	// Reset IRQ
-	status1 = readstat();
+	//status1 = readstat();
 	alOut(2,0xff);	// Set timer 1
 	alOut(4,0x21);	// Start timer 1
-	SDL_Delay(TimerDelay100);
 
-	status2 = readstat();
+	// We ALWAYS return true here, but maybe it's good
+	// to send some commands to the emulated OPL chip
+
+	// TODO (Chocolate Cat3D): Anyway to handle this delay (if at all)?
+	//SDL_Delay(TimerDelay100);
+
+	//status2 = readstat();
 	alOut(4,0x60);
 	alOut(4,0x80);
 
-	if (((status1 & 0xe0) == 0x00) && ((status2 & 0xe0) == 0xc0))
+	//if (((status1 & 0xe0) == 0x00) && ((status2 & 0xe0) == 0xc0))
 	{
 		for (i = 1;i <= 0xf5;i++)	// Zero all the registers
 			alOut(i,0);
@@ -709,8 +761,8 @@ SDL_DetectAdLib(void)
 
 		return(true);
 	}
-	else
-		return(false);
+//	else
+//		return(false);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -719,10 +771,10 @@ SDL_DetectAdLib(void)
 //		dispatches to whatever other routines are appropriate
 //
 ///////////////////////////////////////////////////////////////////////////
-static void interrupt
+static void /*interrupt*/
 SDL_t0Service(void)
 {
-static	word	count = 1;
+static	id0_word_t	count = 1;
 
 #if 0	// for debugging
 asm	mov	dx,STATUS_REGISTER_1
@@ -741,8 +793,8 @@ asm	out	dx,al
 		SDL_ALService();
 		if (!(++count & 7))
 		{
-			LocalTime++;
-			TimeCount++;
+			//LocalTime++;
+			//TimeCount++;
 			if (SoundUserHook)
 				SoundUserHook();
 		}
@@ -763,8 +815,8 @@ asm	out	dx,al
 	{
 		if (!(++count & 1))
 		{
-			LocalTime++;
-			TimeCount++;
+			//LocalTime++;
+			//TimeCount++;
 			if (SoundUserHook)
 				SoundUserHook();
 		}
@@ -779,6 +831,7 @@ asm	out	dx,al
 		}
 	}
 
+#if 0
 asm	mov	ax,[WORD PTR TimerCount]
 asm	add	ax,[WORD PTR TimerDivisor]
 asm	mov	[WORD PTR TimerCount],ax
@@ -788,6 +841,7 @@ asm	jmp	olddone
 myack:;
 	outportb(0x20,0x20);	// Ack the interrupt
 olddone:;
+#endif
 
 #if 0	// for debugging
 asm	mov	dx,STATUS_REGISTER_1
@@ -854,7 +908,7 @@ SDL_StartDevice(void)
 static void
 SDL_SetTimerSpeed(void)
 {
-	word	rate;
+	id0_word_t	rate;
 
 	if (MusicMode == smm_AdLib)
 		rate = TickBase * 8;
@@ -870,11 +924,11 @@ SDL_SetTimerSpeed(void)
 //	SD_SetSoundMode() - Sets which sound hardware to use for sound effects
 //
 ///////////////////////////////////////////////////////////////////////////
-boolean
+id0_boolean_t
 SD_SetSoundMode(SDMode mode)
 {
-	boolean	result;
-	word	tableoffset;
+	id0_boolean_t	result;
+	id0_word_t	tableoffset;
 
 	SD_StopSound();
 
@@ -909,7 +963,7 @@ SD_SetSoundMode(SDMode mode)
 		SDL_ShutDevice();
 		SoundMode = mode;
 #ifndef	_MUSE_
-		SoundTable = (word *)(&audiosegs[tableoffset]);
+		SoundTable = (id0_word_t *)(&audiosegs[tableoffset]);
 #endif
 		SDL_StartDevice();
 	}
@@ -924,10 +978,10 @@ SD_SetSoundMode(SDMode mode)
 //	SD_SetMusicMode() - sets the device to use for background music
 //
 ///////////////////////////////////////////////////////////////////////////
-boolean
+id0_boolean_t
 SD_SetMusicMode(SMMode mode)
 {
-	boolean	result;
+	id0_boolean_t	result;
 
 	SD_FadeOutMusic();
 	while (SD_MusicPlaying())
@@ -968,7 +1022,7 @@ SD_SetMusicMode(SMMode mode)
 void
 SD_Startup(void)
 {
-	int	i;
+	id0_int_t	i;
 
 	if (SD_Started)
 		return;
@@ -989,12 +1043,13 @@ SD_Startup(void)
 
 	SoundUserHook = 0;
 
-	t0OldService = getvect(8);	// Get old timer 0 ISR
+	//t0OldService = getvect(8);	// Get old timer 0 ISR
 
-	SDL_InitDelay();			// SDL_InitDelay() uses t0OldService
+	//SDL_InitDelay();			// SDL_InitDelay() uses t0OldService
 
-	setvect(8,SDL_t0Service);	// Set to my timer 0 ISR
-	LocalTime = TimeCount = alTimeCount = 0;
+	BE_SDL_StartAudioSDService(&SDL_t0Service);
+	//setvect(8,SDL_t0Service);	// Set to my timer 0 ISR
+	/*LocalTime = TimeCount =*/ alTimeCount = 0;
 
 	SD_SetSoundMode(sdm_Off);
 	SD_SetMusicMode(smm_Off);
@@ -1015,9 +1070,9 @@ SD_Startup(void)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-SD_Default(boolean gotit,SDMode sd,SMMode sm)
+SD_Default(id0_boolean_t gotit,SDMode sd,SMMode sm)
 {
-	boolean	gotsd,gotsm;
+	id0_boolean_t	gotsd,gotsm;
 
 	gotsd = gotsm = gotit;
 
@@ -1071,18 +1126,24 @@ SD_Shutdown(void)
 	if (!SD_Started)
 		return;
 
+	BE_SDL_StopAudioSDService();
+
 	SD_MusicOff();
 	SDL_ShutDevice();
 	SDL_CleanDevice();
 
-	asm	pushf
-	asm	cli
+	BE_SDL_LockAudioRecursively();
+//	asm	pushf
+//	asm	cli
 
 	SDL_SetTimer0(0);
 
-	setvect(8,t0OldService);
+// Do NOT call this here - A deadlock is a possibility (via recursive lock)
+//	BE_SDL_StopAudioSDService(void);
+//	setvect(8,t0OldService);
 
-	asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//	asm	popf
 
 	SD_Started = false;
 }
@@ -1107,12 +1168,13 @@ SD_SetUserHook(void (* hook)(void))
 void
 SD_PlaySound(soundnames sound)
 {
-	SoundCommon	far *s;
+	SoundCommon	id0_far *s;
 
 	if ((SoundMode == sdm_Off) || (sound == -1))
 		return;
 
-	s = MK_FP(SoundTable[sound],0);
+	//s = MK_FP(SoundTable[sound],0);
+	s = (SoundCommon id0_far *)(SoundTable[sound]);
 	if (!s)
 		Quit("SD_PlaySound() - Uncached sound");
 	if (!s->length)
@@ -1123,10 +1185,10 @@ SD_PlaySound(soundnames sound)
 	switch (SoundMode)
 	{
 	case sdm_PC:
-		SDL_PCPlaySound((void far *)s);
+		SDL_PCPlaySound((void id0_far *)s);
 		break;
 	case sdm_AdLib:
-		SDL_ALPlaySound((void far *)s);
+		SDL_ALPlaySound((void id0_far *)s);
 		break;
 	}
 
@@ -1140,10 +1202,10 @@ SD_PlaySound(soundnames sound)
 //		no sound is playing
 //
 ///////////////////////////////////////////////////////////////////////////
-word
+id0_word_t
 SD_SoundPlaying(void)
 {
-	boolean	result = false;
+	id0_boolean_t	result = false;
 
 	switch (SoundMode)
 	{
@@ -1213,7 +1275,7 @@ SD_MusicOn(void)
 void
 SD_MusicOff(void)
 {
-	word	i;
+	id0_word_t	i;
 
 
 	switch (MusicMode)
@@ -1234,11 +1296,12 @@ SD_MusicOff(void)
 //
 ///////////////////////////////////////////////////////////////////////////
 void
-SD_StartMusic(MusicGroup far *music)
+SD_StartMusic(MusicGroup id0_far *music)
 {
 	SD_MusicOff();
-asm	pushf
-asm	cli
+	BE_SDL_LockAudioRecursively();
+//asm	pushf
+//asm	cli
 
 	if (MusicMode == smm_AdLib)
 	{
@@ -1249,7 +1312,8 @@ asm	cli
 		SD_MusicOn();
 	}
 
-asm	popf
+	BE_SDL_UnlockAudioRecursively();
+//asm	popf
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -1276,10 +1340,10 @@ SD_FadeOutMusic(void)
 //		not
 //
 ///////////////////////////////////////////////////////////////////////////
-boolean
+id0_boolean_t
 SD_MusicPlaying(void)
 {
-	boolean	result;
+	id0_boolean_t	result;
 
 	switch (MusicMode)
 	{

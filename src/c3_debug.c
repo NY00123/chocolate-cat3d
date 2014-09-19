@@ -50,8 +50,8 @@
 */
 
 
-int	maporgx;
-int	maporgy;
+id0_int_t	maporgx;
+id0_int_t	maporgy;
 enum {mapview,tilemapview,actoratview,visview}	viewtype;
 
 void ViewMap (void);
@@ -70,10 +70,10 @@ void ViewMap (void);
 
 void DebugMemory (void)
 {
-	int	i;
-	char    scratch[80],str[10];
-	long	mem;
-	spritetype _seg	*block;
+	id0_int_t	i;
+	id0_char_t    scratch[80],str[10];
+	id0_long_t	mem;
+	spritetype id0_seg	*block;
 
 	VW_FixRefreshBuffer ();
 	US_CenterWindow (16,7);
@@ -119,8 +119,8 @@ void DebugMemory (void)
 
 void PicturePause (void)
 {
-	int	y;
-	unsigned	source;
+	id0_int_t	y;
+	id0_unsigned_t	source;
 
 	source = displayofs+panadjust;
 
@@ -193,10 +193,10 @@ void ShapeTest (void)
 ================
 */
 
-int DebugKeys (void)
+id0_int_t DebugKeys (void)
 {
-	boolean esc;
-	int level,i;
+	id0_boolean_t esc;
+	id0_int_t level,i;
 
 	if (Keyboard[sc_B])		// B = border color
 	{
@@ -395,9 +395,9 @@ int DebugKeys (void)
 =====================
 */
 
-void LatchDrawChar (unsigned x, unsigned y, unsigned picnum)
+void LatchDrawChar (id0_unsigned_t x, id0_unsigned_t y, id0_unsigned_t picnum)
 {
-	unsigned	source, dest;
+	id0_unsigned_t	source, dest;
 
 	dest = bufferofs + ylookup[y]+x;
 	source = latchpics[0]+picnum*8;
@@ -446,9 +446,9 @@ asm	mov	ds,ax					// restore turbo's data segment
 =====================
 */
 
-void LatchDrawTile (unsigned x, unsigned y, unsigned picnum)
+void LatchDrawTile (id0_unsigned_t x, id0_unsigned_t y, id0_unsigned_t picnum)
 {
-	unsigned	source, dest;
+	id0_unsigned_t	source, dest;
 
 	dest = bufferofs + ylookup[y]+x;
 	source = tileoffsets[picnum];
@@ -492,8 +492,8 @@ asm	mov	ds,ax					// restore turbo's data segment
 
 void OverheadRefresh (void)
 {
-	unsigned	x,y,endx,endy,sx,sy;
-	unsigned	tile;
+	id0_unsigned_t	x,y,endx,endy,sx,sy;
+	id0_unsigned_t	tile;
 
 
 	if (++screenpage == 3)
@@ -521,7 +521,7 @@ void OverheadRefresh (void)
 				break;
 
 			case actoratview:
-				tile = (unsigned)actorat[x][y];
+				tile = (id0_unsigned_t)actorat[x][y];
 				break;
 
 			case visview:
@@ -556,7 +556,7 @@ void OverheadRefresh (void)
 
 void ViewMap (void)
 {
-	boolean		button0held;
+	id0_boolean_t		button0held;
 
 	viewtype = actoratview;
 	button0held = false;

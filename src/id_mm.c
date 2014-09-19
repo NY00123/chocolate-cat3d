@@ -28,7 +28,7 @@ Primary coder: John Carmack
 
 RELIES ON
 ---------
-Quit (char *error) function
+Quit (id0_char_t *error) function
 
 
 WORK TO DO
@@ -42,7 +42,7 @@ EMS / XMS unmanaged routines
 =============================================================================
 */
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
 #pragma hdrstop
 
 #pragma warn -pro
@@ -65,10 +65,10 @@ EMS / XMS unmanaged routines
 
 typedef struct mmblockstruct
 {
-	unsigned	start,length;
-	unsigned	attributes;
+	id0_unsigned_t	start,length;
+	id0_unsigned_t	attributes;
 	memptr		*useptr;	// pointer to the segment start
-	struct mmblockstruct far *next;
+	struct mmblockstruct id0_far *next;
 } mmblocktype;
 
 
@@ -89,7 +89,7 @@ typedef struct mmblockstruct
 
 mminfotype	mminfo;
 memptr		bufferseg;
-boolean		mmerror;
+id0_boolean_t		mmerror;
 
 void		(* beforesort) (void);
 void		(* aftersort) (void);
@@ -102,21 +102,35 @@ void		(* aftersort) (void);
 =============================================================================
 */
 
-boolean		mmstarted;
+id0_boolean_t		mmstarted;
 
-void far	*farheap;
-void		*nearheap;
+//void id0_far	*farheap;
+//void		*nearheap;
 
-mmblocktype	far mmblocks[MAXBLOCKS]
-			,far *mmhead,far *mmfree,far *mmrover,far *mmnew;
+mmblocktype	id0_far mmblocks[MAXBLOCKS]
+			,id0_far *mmhead,id0_far *mmfree,id0_far *mmrover,id0_far *mmnew;
 
-boolean		bombonerror;
+id0_boolean_t		bombonerror;
 
-unsigned	totalEMSpages,freeEMSpages,EMSpageframe,EMSpagesmapped,EMShandle;
+id0_unsigned_t	totalEMSpages,freeEMSpages,EMSpageframe,EMSpagesmapped,EMShandle;
 
-void		(* XMSaddr) (void);		// far pointer to XMS driver
-
-unsigned	numUMBs,UMBbase[MAXUMBS];
+// A static memory buffer used for our allocations, made out of 16-bytes
+// long paragraphs (each of them beginning with some emulated "segment")
+static id0_byte_t mmEmulatedMemSpace[512*1024];
+// The very first "segment" in the emulated space
+#define EMULATED_FIRST_SEG 0
+// Different portions of the space being emulated - start points
+#define EMULATED_NEAR_SEG EMULATED_FIRST_SEG
+#define EMULATED_FAR_SEG (EMULATED_NEAR_SEG+4096)
+#define EMULATED_EMS_SEG (EMULATED_FAR_SEG+20544)
+#define EMULATED_XMS_SEG (EMULATED_EMS_SEG+4096)
+// Lengths in paragraphs of the different sections
+#define EMULATED_NEAR_PARAGRAPHS (EMULATED_FAR_SEG-EMULATED_NEAR_SEG)
+#define EMULATED_FAR_PARAGRAPHS (EMULATED_EMS_SEG-EMULATED_FAR_SEG)
+#define EMULATED_EMS_PARAGRAPHS (EMULATED_XMS_SEG-EMULATED_EMS_SEG)
+#define EMULATED_XMS_PARAGRAPHS (sizeof(mmEmulatedMemSpace)/16-EMULATED_NEAR_PARAGRAPHS-EMULATED_FAR_PARAGRAPHS-EMULATED_EMS_PARAGRAPHS)
+// Used to obtain a pointer to some location in mmEmulatedMemSpace
+#define EMULATED_SEG_TO_PTR(seg) (mmEmulatedMemSpace+(seg)*16)
 
 //==========================================================================
 
@@ -124,16 +138,17 @@ unsigned	numUMBs,UMBbase[MAXUMBS];
 // local prototypes
 //
 
-boolean		MML_CheckForEMS (void);
-void 		MML_ShutdownEMS (void);
-void 		MM_MapEMS (void);
-boolean 	MML_CheckForXMS (void);
-void 		MML_ShutdownXMS (void);
-void		MML_UseSpace (unsigned segstart, unsigned seglength);
+//id0_boolean_t		MML_CheckForEMS (void);
+//void 		MML_ShutdownEMS (void);
+//void 		MM_MapEMS (void);
+//id0_boolean_t 	MML_CheckForXMS (void);
+//void 		MML_ShutdownXMS (void);
+void		MML_UseSpace (id0_unsigned_t segstart, id0_unsigned_t seglength);
 void 		MML_ClearBlock (void);
 
 //==========================================================================
 
+#if 0
 /*
 ======================
 =
@@ -144,9 +159,9 @@ void 		MML_ClearBlock (void);
 =======================
 */
 
-char	emmname[9] = "EMMXXXX0";
+id0_char_t	emmname[9] = "EMMXXXX0";
 
-boolean MML_CheckForEMS (void)
+id0_boolean_t MML_CheckForEMS (void)
 {
 asm	mov	dx,OFFSET emmname[0]
 asm	mov	ax,0x3d00
@@ -196,32 +211,32 @@ error:
 
 void MML_SetupEMS (void)
 {
-	char	str[80],str2[10];
-	unsigned	error;
+	id0_char_t	str[80],str2[10];
+	id0_unsigned_t	error;
 
 	totalEMSpages = freeEMSpages = EMSpageframe = EMSpagesmapped = 0;
 
 asm {
 	mov	ah,EMS_STATUS
-	int	EMS_INT						// make sure EMS hardware is present
+	id0_int_t	EMS_INT						// make sure EMS hardware is present
 	or	ah,ah
 	jnz	error
 
 	mov	ah,EMS_VERSION
-	int	EMS_INT
+	id0_int_t	EMS_INT
 	or	ah,ah
 	jnz	error
 	cmp	al,0x32						// only work on ems 3.2 or greater
 	jb	error
 
 	mov	ah,EMS_GETFRAME
-	int	EMS_INT						// find the page frame address
+	id0_int_t	EMS_INT						// find the page frame address
 	or	ah,ah
 	jnz	error
 	mov	[EMSpageframe],bx
 
 	mov	ah,EMS_GETPAGES
-	int	EMS_INT						// find out how much EMS is there
+	id0_int_t	EMS_INT						// find out how much EMS is there
 	or	ah,ah
 	jnz	error
 	mov	[totalEMSpages],dx
@@ -238,7 +253,7 @@ getpages:
 asm {
 	mov	[EMSpagesmapped],bx
 	mov	ah,EMS_ALLOCPAGES			// allocate up to 64k of EMS
-	int	EMS_INT
+	id0_int_t	EMS_INT
 	or	ah,ah
 	jnz	error
 	mov	[EMShandle],dx
@@ -273,7 +288,7 @@ void MML_ShutdownEMS (void)
 asm	{
 	mov	ah,EMS_FREEPAGES
 	mov	dx,[EMShandle]
-	int	EMS_INT
+	id0_int_t	EMS_INT
 	or	ah,ah
 	jz	ok
 	}
@@ -298,9 +313,9 @@ ok:
 
 void MM_MapEMS (void)
 {
-	char	str[80],str2[10];
-	unsigned	error;
-	int	i;
+	id0_char_t	str[80],str2[10];
+	id0_unsigned_t	error;
+	id0_int_t	i;
 
 	for (i=0;i<EMSpagesmapped;i++)
 	{
@@ -309,7 +324,7 @@ void MM_MapEMS (void)
 		mov	bx,[i]			// logical page
 		mov	al,bl			// physical page
 		mov	dx,[EMShandle]	// handle
-		int	EMS_INT
+		id0_int_t	EMS_INT
 		or	ah,ah
 		jnz	error
 		}
@@ -337,13 +352,13 @@ error:
 =======================
 */
 
-boolean MML_CheckForXMS (void)
+id0_boolean_t MML_CheckForXMS (void)
 {
 	numUMBs = 0;
 
 asm {
 	mov	ax,0x4300
-	int	0x2f				// query status of installed diver
+	id0_int_t	0x2f				// query status of installed diver
 	cmp	al,0x80
 	je	good
 	}
@@ -365,7 +380,7 @@ good:
 
 void MML_SetupXMS (void)
 {
-	unsigned	base,size;
+	id0_unsigned_t	base,size;
 
 asm	{
 	mov	ax,0x4310
@@ -417,8 +432,8 @@ done:;
 
 void MML_ShutdownXMS (void)
 {
-	int	i;
-	unsigned	base;
+	id0_int_t	i;
+	id0_unsigned_t	base;
 
 	for (i=0;i<numUMBs;i++)
 	{
@@ -429,6 +444,8 @@ asm	mov	dx,[base]
 asm	call	[DWORD PTR XMSaddr]
 	}
 }
+
+#endif
 
 //==========================================================================
 
@@ -444,11 +461,11 @@ asm	call	[DWORD PTR XMSaddr]
 ======================
 */
 
-void MML_UseSpace (unsigned segstart, unsigned seglength)
+void MML_UseSpace (id0_unsigned_t segstart, id0_unsigned_t seglength)
 {
-	mmblocktype far *scan,far *last;
-	unsigned	oldend;
-	long		extra;
+	mmblocktype id0_far *scan,id0_far *last;
+	id0_unsigned_t	oldend;
+	id0_long_t		extra;
 
 	scan = last = mmhead;
 	mmrover = mmhead;		// reset rover to start of memory
@@ -505,7 +522,7 @@ void MML_UseSpace (unsigned segstart, unsigned seglength)
 
 void MML_ClearBlock (void)
 {
-	mmblocktype far *scan,far *last;
+	mmblocktype id0_far *scan,id0_far *last;
 
 	scan = mmhead->next;
 
@@ -536,14 +553,14 @@ void MML_ClearBlock (void)
 ===================
 */
 
-static	char *ParmStrings[] = {"noems","noxms",""};
+static	id0_char_t *ParmStrings[] = {"noems","noxms",""};
 
 void MM_Startup (void)
 {
-	int i;
-	unsigned 	long length;
-	void far 	*start;
-	unsigned 	segstart,seglength,endfree;
+	id0_int_t i;
+	id0_unsigned_long_t 	length;
+	void id0_far 	*start;
+	id0_unsigned_t 	segstart,seglength,endfree;
 
 	if (mmstarted)
 		MM_Shutdown ();
@@ -564,7 +581,7 @@ void MM_Startup (void)
 // locked block of all memory until we punch out free space
 //
 	GETNEWBLOCK;
-	mmhead = mmnew;				// this will allways be the first node
+	mmhead = mmnew;				// this will always be the first node
 	mmnew->start = 0;
 	mmnew->length = 0xffff;
 	mmnew->attributes = LOCKBIT;
@@ -575,8 +592,14 @@ void MM_Startup (void)
 //
 // get all available near conventional memory segments
 //
+	seglength = EMULATED_NEAR_PARAGRAPHS;
+	segstart = EMULATED_NEAR_SEG;
+	length = seglength*16;
+	MML_UseSpace(segstart, seglength);
+	mminfo.nearheap = length;
+#if 0
 	length=coreleft();
-	start = (void far *)(nearheap = malloc(length));
+	start = (void id0_far *)(nearheap = malloc(length));
 
 	length -= 16-(FP_OFF(start)&15);
 	length -= SAVENEARHEAP;
@@ -584,10 +607,18 @@ void MM_Startup (void)
 	segstart = FP_SEG(start)+(FP_OFF(start)+15)/16;
 	MML_UseSpace (segstart,seglength);
 	mminfo.nearheap = length;
+#endif
 
 //
 // get all available far conventional memory segments
 //
+	seglength = EMULATED_FAR_PARAGRAPHS;
+	segstart = EMULATED_FAR_SEG;
+	length = seglength*16;
+	MML_UseSpace(segstart, seglength);
+	mminfo.farheap = length;
+	mminfo.mainmem = mminfo.nearheap + mminfo.farheap;
+#if 0
 	length=farcoreleft();
 	start = farheap = farmalloc(length);
 	length -= 16-(FP_OFF(start)&15);
@@ -597,6 +628,7 @@ void MM_Startup (void)
 	MML_UseSpace (segstart,seglength);
 	mminfo.farheap = length;
 	mminfo.mainmem = mminfo.nearheap + mminfo.farheap;
+#endif
 
 
 //
@@ -608,7 +640,12 @@ void MM_Startup (void)
 		if ( US_CheckParm(_argv[i],ParmStrings) == 0)
 			goto emsskip;				// param NOEMS
 	}
-
+	seglength = EMULATED_EMS_PARAGRAPHS;
+	segstart = EMULATED_EMS_SEG;
+	length = seglength*16;
+	MML_UseSpace(segstart, seglength);
+	mminfo.EMSmem = length;
+#if 0
 	if (MML_CheckForEMS())
 	{
 		MML_SetupEMS();					// allocate space
@@ -616,6 +653,7 @@ void MM_Startup (void)
 		MM_MapEMS();					// map in used pages
 		mminfo.EMSmem = EMSpagesmapped*0x4000l;
 	}
+#endif
 
 //
 // detect XMS and get upper memory blocks
@@ -627,9 +665,15 @@ emsskip:
 		if ( US_CheckParm(_argv[i],ParmStrings) == 0)
 			goto xmsskip;				// param NOXMS
 	}
-
+	seglength = EMULATED_XMS_PARAGRAPHS;
+	segstart = EMULATED_XMS_SEG;
+	length = seglength*16;
+	MML_UseSpace(segstart, seglength);
+	mminfo.XMSmem = length;
+#if 0
 	if (MML_CheckForXMS())
 		MML_SetupXMS();					// allocate as many UMBs as possible
+#endif
 
 //
 // allocate the misc buffer
@@ -654,6 +698,7 @@ xmsskip:
 
 void MM_Shutdown (void)
 {
+#if 0
   if (!mmstarted)
 	return;
 
@@ -661,6 +706,7 @@ void MM_Shutdown (void)
   free (nearheap);
   MML_ShutdownEMS ();
   MML_ShutdownXMS ();
+#endif
 }
 
 //==========================================================================
@@ -675,12 +721,12 @@ void MM_Shutdown (void)
 ====================
 */
 
-void MM_GetPtr (memptr *baseptr,unsigned long size)
+void MM_GetPtr (memptr *baseptr, id0_unsigned_long_t size)
 {
-	mmblocktype far *scan,far *lastscan,far *endscan
-				,far *purge,far *next;
-	int			search;
-	unsigned	needed,startseg;
+	mmblocktype id0_far *scan,id0_far *lastscan,id0_far *endscan
+				,id0_far *purge,id0_far *next;
+	id0_int_t			search;
+	id0_unsigned_t	needed,startseg;
 
 	needed = (size+15)/16;		// convert size from bytes to paragraphs
 
@@ -731,7 +777,8 @@ void MM_GetPtr (memptr *baseptr,unsigned long size)
 			//
 				purge = lastscan->next;
 				lastscan->next = mmnew;
-				mmnew->start = *(unsigned *)baseptr = startseg;
+				mmnew->start /*= *(id0_unsigned_t *)baseptr*/ = startseg;
+				*baseptr = EMULATED_SEG_TO_PTR(startseg);
 				mmnew->next = scan;
 				while ( purge != scan)
 				{	// free the purgable block
@@ -778,7 +825,7 @@ void MM_GetPtr (memptr *baseptr,unsigned long size)
 
 void MM_FreePtr (memptr *baseptr)
 {
-	mmblocktype far *scan,far *last;
+	mmblocktype id0_far *scan,id0_far *last;
 
 	last = mmhead;
 	scan = last->next;
@@ -811,9 +858,9 @@ void MM_FreePtr (memptr *baseptr)
 =====================
 */
 
-void MM_SetPurge (memptr *baseptr, int purge)
+void MM_SetPurge (memptr *baseptr, id0_int_t purge)
 {
-	mmblocktype far *start;
+	mmblocktype id0_far *start;
 
 	start = mmrover;
 
@@ -847,9 +894,9 @@ void MM_SetPurge (memptr *baseptr, int purge)
 =====================
 */
 
-void MM_SetLock (memptr *baseptr, boolean locked)
+void MM_SetLock (memptr *baseptr, id0_boolean_t locked)
 {
-	mmblocktype far *start;
+	mmblocktype id0_far *start;
 
 	start = mmrover;
 
@@ -885,9 +932,9 @@ void MM_SetLock (memptr *baseptr, boolean locked)
 
 void MM_SortMem (void)
 {
-	mmblocktype far *scan,far *last,far *next;
-	unsigned	start,length,source,dest,oldborder;
-	int			playing;
+	mmblocktype id0_far *scan,id0_far *last,id0_far *next;
+	id0_unsigned_t	start,length,source,dest,oldborder;
+	id0_int_t			playing;
 
 	//
 	// lock down a currently playing sound
@@ -904,7 +951,8 @@ void MM_SortMem (void)
 			playing += STARTADLIBSOUNDS;
 			break;
 		}
-		MM_SetLock(&(memptr)audiosegs[playing],true);
+		MM_SetLock((memptr *)(&audiosegs[playing]),true);
+		//MM_SetLock(&(memptr)audiosegs[playing],true);
 	}
 
 
@@ -961,7 +1009,8 @@ void MM_SortMem (void)
 					movedata(source,0,dest,0,length*16);
 
 					scan->start = start;
-					*(unsigned *)scan->useptr = start;
+					//*(id0_unsigned_t *)scan->useptr = start;
+					*(scan->useptr) = EMULATED_SEG_TO_PTR(start);
 				}
 				start = scan->start + scan->length;
 			}
@@ -979,7 +1028,8 @@ void MM_SortMem (void)
 	VW_ColorBorder (oldborder);
 
 	if (playing)
-		MM_SetLock(&(memptr)audiosegs[playing],false);
+		MM_SetLock((memptr *)(&audiosegs[playing]),false);
+		//MM_SetLock(&(memptr)audiosegs[playing],false);
 }
 
 
@@ -995,10 +1045,10 @@ void MM_SortMem (void)
 
 void MM_ShowMemory (void)
 {
-	mmblocktype far *scan;
-	unsigned color,temp;
-	long	end,owner;
-	char    scratch[80],str[10];
+	mmblocktype id0_far *scan;
+	id0_unsigned_t color,temp;
+	id0_long_t	end,owner;
+	id0_char_t    scratch[80],str[10];
 
 	VW_SetDefaultColors();
 	VW_SetLineWidth(40);
@@ -1023,17 +1073,17 @@ void MM_ShowMemory (void)
 		if (scan->start<=end)
 			Quit ("MM_ShowMemory: Memory block order currupted!");
 		end = scan->start+scan->length-1;
-		VW_Hlin(scan->start,(unsigned)end,0,color);
+		VW_Hlin(scan->start,(id0_unsigned_t)end,0,color);
 		VW_Plot(scan->start,0,15);
 		if (scan->next->start > end+1)
 			VW_Hlin(end+1,scan->next->start,0,0);	// black = free
 
 #if 0
 strcpy (scratch,"Size:");
-ltoa ((long)scan->length*16,str,10);
+ltoa ((id0_long_t)scan->length*16,str,10);
 strcat (scratch,str);
 strcat (scratch,"\tOwner:0x");
-owner = (unsigned)scan->useptr;
+owner = (id0_unsigned_t)scan->useptr;
 ultoa (owner,str,16);
 strcat (scratch,str);
 strcat (scratch,"\n");
@@ -1063,10 +1113,10 @@ write (debughandle,scratch,strlen(scratch));
 ======================
 */
 
-long MM_UnusedMemory (void)
+id0_long_t MM_UnusedMemory (void)
 {
-	unsigned free;
-	mmblocktype far *scan;
+	id0_unsigned_t free;
+	mmblocktype id0_far *scan;
 
 	free = 0;
 	scan = mmhead;
@@ -1093,10 +1143,10 @@ long MM_UnusedMemory (void)
 ======================
 */
 
-long MM_TotalFree (void)
+id0_long_t MM_TotalFree (void)
 {
-	unsigned free;
-	mmblocktype far *scan;
+	id0_unsigned_t free;
+	mmblocktype id0_far *scan;
 
 	free = 0;
 	scan = mmhead;
@@ -1122,7 +1172,7 @@ long MM_TotalFree (void)
 =====================
 */
 
-void MM_BombOnError (boolean bomb)
+void MM_BombOnError (id0_boolean_t bomb)
 {
 	bombonerror = bomb;
 }

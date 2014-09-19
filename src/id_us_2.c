@@ -24,26 +24,32 @@
 //      Hacked up for Catacomb 3D
 //
 
-#include "ID_HEADS.H"
+#include "id_heads.h"
+
+// FIXME (Chocolate Cat3D): Is that good?
+#ifndef O_BINARY
+#define O_BINARY 0 // For Unix
+#endif
+
 #pragma hdrstop
 
 #pragma warn    -pia
 
 //      Special imports
-extern  boolean         showscorebox;
+extern  id0_boolean_t         showscorebox;
 #ifdef  KEEN
-extern  boolean         oldshooting;
+extern  id0_boolean_t         oldshooting;
 extern  ScanCode        firescan;
 #else
 		ScanCode        firescan;
 #endif
 
 //      Global variables
-		boolean         ingame,abortgame,loadedgame;
+		id0_boolean_t         ingame,abortgame,loadedgame;
 		GameDiff        restartgame = gd_Continue;
 
 //      Internal variables
-static  boolean         GameIsDirty,
+static  id0_boolean_t         GameIsDirty,
 					QuitToDos,
 					CtlPanelDone;
 
@@ -103,25 +109,25 @@ typedef struct  UserItem
 				UIType                  type;
 				UIFlags                 flags;
 				ScanCode                hotkey;
-				char                    *text;
+				id0_char_t                    *text;
 				UComm                   comm;
-				void                    far *child;     // Should be (UserItemGroup *)
+				void                    id0_far *child;     // Should be (UserItemGroup *)
 
-				word                    x,y;
+				id0_word_t                    x,y;
 		} UserItem;
 typedef struct  UserItemGroup
 		{
-				word                    x,y;
+				id0_word_t                    x,y;
 				graphicnums             title;
 				ScanCode                hotkey;
-				UserItem                far *items;
-				boolean                 (*custom)(UserCall,struct UserItem far *);      // Custom routine
+				UserItem                id0_far *items;
+				id0_boolean_t                 (*custom)(UserCall,struct UserItem id0_far *);      // Custom routine
 
-				word                    cursor;
-		struct  UserItemGroup   far *parent;
+				id0_word_t                    cursor;
+		struct  UserItemGroup   id0_far *parent;
 		} UserItemGroup;
 
-static  char            *BottomS1,*BottomS2,*BottomS3;
+static  id0_char_t            *BottomS1,*BottomS2,*BottomS3;
 static  UComm           Communication;
 static  ScanCode        *KeyMaps[] =
 					{
@@ -139,62 +145,62 @@ static  ScanCode        *KeyMaps[] =
 					};
 
 // Custom routine prototypes
-static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
-				USL_KeyCustom(UserCall call,struct UserItem far *item),
-				USL_KeySCustom(UserCall call,struct UserItem far *item),
-				USL_Joy1Custom(UserCall call,struct UserItem far *item),
-				USL_Joy2Custom(UserCall call,struct UserItem far *item),
-				USL_LoadCustom(UserCall call,struct UserItem far *item),
-				USL_SaveCustom(UserCall call,struct UserItem far *item),
-				USL_ScoreCustom(UserCall call,struct UserItem far *item),
-				USL_CompCustom(UserCall call,struct UserItem far *item),
+static  id0_boolean_t USL_ConfigCustom(UserCall call,struct UserItem id0_far *item),
+				USL_KeyCustom(UserCall call,struct UserItem id0_far *item),
+				USL_KeySCustom(UserCall call,struct UserItem id0_far *item),
+				USL_Joy1Custom(UserCall call,struct UserItem id0_far *item),
+				USL_Joy2Custom(UserCall call,struct UserItem id0_far *item),
+				USL_LoadCustom(UserCall call,struct UserItem id0_far *item),
+				USL_SaveCustom(UserCall call,struct UserItem id0_far *item),
+				USL_ScoreCustom(UserCall call,struct UserItem id0_far *item),
+				USL_CompCustom(UserCall call,struct UserItem id0_far *item),
 #ifdef KEEN
-				USL_TwoCustom(UserCall call,struct UserItem far *item),
+				USL_TwoCustom(UserCall call,struct UserItem id0_far *item),
 #endif
-				USL_PongCustom(UserCall call,struct UserItem far *item);
+				USL_PongCustom(UserCall call,struct UserItem id0_far *item);
 
 #define DefButton(key,text)                             uii_Button,ui_Normal,key,text
 #define DefRButton(key,text)                    uii_RadioButton,ui_Normal,key,text
 #define DefFolder(key,text,child)               uii_Folder,ui_Normal,key,text,uc_None,child
 #define CustomGroup(title,key,custom)   0,0,title,key,0,custom
-	UserItem far holder[] =
+	UserItem id0_far holder[] =
 	{
 		{DefButton(sc_None,"DEBUG")},
 		{uii_Bad}
 	};
-	UserItemGroup   far holdergroup = {0,0,CP_MAINMENUPIC,sc_None,holder};
+	UserItemGroup   id0_far holdergroup = {0,0,CP_MAINMENUPIC,sc_None,holder};
 
 	// Sound menu
-	UserItem far soundi[] =
+	UserItem id0_far soundi[] =
 	{
 		{DefRButton(sc_N,"NO SOUND EFFECTS")},
 		{DefRButton(sc_P,"PC SPEAKER")},
 		{DefRButton(sc_A,"ADLIB/SOUNDBLASTER")},
 		{uii_Bad}
 	};
-	UserItemGroup   far soundgroup = {8,0,CP_SOUNDMENUPIC,sc_None,soundi};
+	UserItemGroup   id0_far soundgroup = {8,0,CP_SOUNDMENUPIC,sc_None,soundi};
 
 	// Music menu
-	UserItem far musici[] =
+	UserItem id0_far musici[] =
 	{
 		{DefRButton(sc_N,"NO MUSIC")},
 		{DefRButton(sc_A,"ADLIB/SOUNDBLASTER")},
 		{uii_Bad}
 	};
-	UserItemGroup   far musicgroup = {8,0,CP_MUSICMENUPIC,sc_None,musici};
+	UserItemGroup   id0_far musicgroup = {8,0,CP_MUSICMENUPIC,sc_None,musici};
 
 	// New game menu
-	UserItem far newgamei[] =
+	UserItem id0_far newgamei[] =
 	{
 		{DefButton(sc_E,"BEGIN EASY GAME"),uc_SEasy},
 		{DefButton(sc_N,"BEGIN NORMAL GAME"),uc_SNormal},
 		{DefButton(sc_H,"BEGIN HARD GAME"),uc_SHard},
 		{uii_Bad}
 	};
-	UserItemGroup   far newgamegroup = {8,0,CP_NEWGAMEMENUPIC,sc_None,newgamei,0,1};
+	UserItemGroup   id0_far newgamegroup = {8,0,CP_NEWGAMEMENUPIC,sc_None,newgamei,0,1};
 
 	// Load/Save game menu
-	UserItem far loadsavegamei[] =
+	UserItem id0_far loadsavegamei[] =
 	{
 		{uii_Button,ui_Normal,sc_None},
 		{uii_Button,ui_Normal,sc_None},
@@ -204,16 +210,16 @@ static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
 		{uii_Button,ui_Normal,sc_None},
 		{uii_Bad}
 	};
-	UserItemGroup   far loadgamegroup = {4,3,CP_LOADMENUPIC,sc_None,loadsavegamei,USL_LoadCustom};
-	UserItemGroup   far savegamegroup = {4,3,CP_SAVEMENUPIC,sc_None,loadsavegamei,USL_SaveCustom};
+	UserItemGroup   id0_far loadgamegroup = {4,3,CP_LOADMENUPIC,sc_None,loadsavegamei,USL_LoadCustom};
+	UserItemGroup   id0_far savegamegroup = {4,3,CP_SAVEMENUPIC,sc_None,loadsavegamei,USL_SaveCustom};
 
 	// Options menu
-	UserItemGroup   far scoregroup = {0,0,0,sc_None,0,USL_ScoreCustom};
-	UserItemGroup   far compgroup = {0,0,0,sc_None,0,USL_CompCustom};
+	UserItemGroup   id0_far scoregroup = {0,0,0,sc_None,0,USL_ScoreCustom};
+	UserItemGroup   id0_far compgroup = {0,0,0,sc_None,0,USL_CompCustom};
 #ifdef KEEN
-	UserItemGroup   far twogroup = {0,0,0,sc_None,0,USL_TwoCustom};
+	UserItemGroup   id0_far twogroup = {0,0,0,sc_None,0,USL_TwoCustom};
 #endif
-	UserItem far optionsi[] =
+	UserItem id0_far optionsi[] =
 	{
 		{DefFolder(sc_S,"",&scoregroup)},
 		{DefFolder(sc_C,"",&compgroup)},
@@ -222,10 +228,10 @@ static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
 #endif
 		{uii_Bad}
 	};
-	UserItemGroup   far optionsgroup = {8,0,CP_OPTIONSMENUPIC,sc_None,optionsi};
+	UserItemGroup   id0_far optionsgroup = {8,0,CP_OPTIONSMENUPIC,sc_None,optionsi};
 
 	// Keyboard menu
-	UserItem far keyi[] =
+	UserItem id0_far keyi[] =
 	{
 		{DefButton(sc_None,"UP & LEFT")},
 		{DefButton(sc_None,"UP")},
@@ -237,8 +243,8 @@ static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
 		{DefButton(sc_None,"LEFT")},
 		{uii_Bad}
 	};
-	UserItemGroup   far keygroup = {0,0,CP_KEYMOVEMENTPIC,sc_None,keyi,USL_KeyCustom};
-	UserItem far keybi[] =
+	UserItemGroup   id0_far keygroup = {0,0,CP_KEYMOVEMENTPIC,sc_None,keyi,USL_KeyCustom};
+	UserItem id0_far keybi[] =
 	{
 #ifdef  KEEN
 		{DefButton(sc_J,"JUMP")},
@@ -255,21 +261,21 @@ static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
 #endif
 		{uii_Bad}
 	};
-	UserItemGroup   far keybgroup = {0,0,CP_KEYBUTTONPIC,sc_None,keybi,USL_KeyCustom};
-	UserItem far keysi[] =
+	UserItemGroup   id0_far keybgroup = {0,0,CP_KEYBUTTONPIC,sc_None,keybi,USL_KeyCustom};
+	UserItem id0_far keysi[] =
 	{
 		{DefFolder(sc_M,"MOVEMENT",&keygroup)},
 		{DefFolder(sc_B,"BUTTONS",&keybgroup)},
 		{uii_Bad}
 	};
-	UserItemGroup   far keysgroup = {8,0,CP_KEYBOARDMENUPIC,sc_None,keysi,USL_KeySCustom};
+	UserItemGroup   id0_far keysgroup = {8,0,CP_KEYBOARDMENUPIC,sc_None,keysi,USL_KeySCustom};
 
 	// Joystick #1 & #2
-	UserItemGroup   far joy1group = {CustomGroup(CP_JOYSTICKMENUPIC,sc_None,USL_Joy1Custom)};
-	UserItemGroup   far joy2group = {CustomGroup(CP_JOYSTICKMENUPIC,sc_None,USL_Joy2Custom)};
+	UserItemGroup   id0_far joy1group = {CustomGroup(CP_JOYSTICKMENUPIC,sc_None,USL_Joy1Custom)};
+	UserItemGroup   id0_far joy2group = {CustomGroup(CP_JOYSTICKMENUPIC,sc_None,USL_Joy2Custom)};
 
 	// Config menu
-	UserItem far configi[] =
+	UserItem id0_far configi[] =
 	{
 		{DefFolder(sc_S,"SOUND",&soundgroup)},
 		{DefFolder(sc_M,"MUSIC",&musicgroup)},
@@ -278,30 +284,30 @@ static  boolean USL_ConfigCustom(UserCall call,struct UserItem far *item),
 		{DefFolder(sc_None,"USE JOYSTICK #2",&joy2group)},
 		{uii_Bad}
 	};
-	UserItemGroup   far configgroup = {8,0,CP_CONFIGMENUPIC,sc_None,configi,USL_ConfigCustom};
+	UserItemGroup   id0_far configgroup = {8,0,CP_CONFIGMENUPIC,sc_None,configi,USL_ConfigCustom};
 
 	// Main menu
-	UserItemGroup   far ponggroup = {0,0,0,sc_None,0,USL_PongCustom};
-	UserItem far rooti[] =
+	UserItemGroup   id0_far ponggroup = {0,0,0,sc_None,0,USL_PongCustom};
+	UserItem id0_far rooti[] =
 	{
 		{DefFolder(sc_N,"NEW GAME",&newgamegroup)},
 		{DefFolder(sc_L,"LOAD GAME",&loadgamegroup)},
 		{DefFolder(sc_S,"SAVE GAME",&savegamegroup)},
 		{DefFolder(sc_C,"CONFIGURE",&configgroup)},
-		{DefButton(sc_R,nil),uc_Return},        // Return to Game/Demo
+		{DefButton(sc_R,id0_nil_t),uc_Return},        // Return to Game/Demo
 		{DefButton(sc_E,"END GAME"),uc_Abort},
 		{DefFolder(sc_B,"SKULL 'N' BONES",&ponggroup)},
 		{DefButton(sc_Q,"QUIT"),uc_Quit},
 		{uii_Bad}
 	};
-	UserItemGroup   far rootgroup = {32,4,CP_MAINMENUPIC,sc_None,rooti};
+	UserItemGroup   id0_far rootgroup = {32,4,CP_MAINMENUPIC,sc_None,rooti};
 #undef  DefButton
 #undef  DefFolder
 
 #define MaxCards        7
-	word                    cstackptr;
-	UserItemGroup   far *cardstack[MaxCards],
-					far *topcard;
+	id0_word_t                    cstackptr;
+	UserItemGroup   id0_far *cardstack[MaxCards],
+					id0_far *topcard;
 
 //      Card stack code
 static void
@@ -321,7 +327,7 @@ USL_PopCard(void)
 }
 
 static void
-USL_PushCard(UserItemGroup far *card)
+USL_PushCard(UserItemGroup id0_far *card)
 {
 	if (cstackptr == MaxCards - 1)
 		return;
@@ -330,9 +336,9 @@ USL_PushCard(UserItemGroup far *card)
 }
 
 static void
-USL_DrawItemIcon(UserItem far *item)
+USL_DrawItemIcon(UserItem id0_far *item)
 {
-	word    flags,tile;
+	id0_word_t    flags,tile;
 
 	if (topcard->custom && topcard->custom(uic_DrawIcon,item))
 		return;
@@ -348,7 +354,7 @@ USL_DrawItemIcon(UserItem far *item)
 }
 
 static void
-USL_DrawItem(UserItem far *item)
+USL_DrawItem(UserItem id0_far *item)
 {
 	if (topcard->custom && topcard->custom(uic_Draw,item))
 		return;
@@ -371,7 +377,7 @@ USL_DrawItem(UserItem far *item)
 static void
 USL_DrawBottom(void)
 {
-	word    w,h;
+	id0_word_t    w,h;
 
 	fontcolor = NohiliteColor;
 
@@ -395,10 +401,10 @@ USL_DrawBottom(void)
 static void
 USL_DrawCtlPanelContents(void)
 {
-	int                             x,y;
-	UserItem                far *item;
+	id0_int_t                             x,y;
+	UserItem                id0_far *item;
 
-	if (topcard->custom && topcard->custom(uic_DrawCard,nil))
+	if (topcard->custom && topcard->custom(uic_DrawCard,id0_nil_t))
 		return;
 
 	if (topcard->title)
@@ -428,7 +434,7 @@ USL_DrawCtlPanelContents(void)
 		y += 8;
 	}
 	if (topcard->custom)
-		topcard->custom(uic_TouchupCard,nil);
+		topcard->custom(uic_TouchupCard,id0_nil_t);
 }
 
 static void
@@ -448,7 +454,7 @@ USL_DrawCtlPanel(void)
 }
 
 static void
-USL_DialogSetup(word w,word h,word *x,word *y)
+USL_DialogSetup(id0_word_t w,id0_word_t h,id0_word_t *x,id0_word_t *y)
 {
 	VWB_DrawMPic(CtlPanelSX,CtlPanelSY,CP_MENUMASKPICM);
 
@@ -462,12 +468,12 @@ USL_DialogSetup(word w,word h,word *x,word *y)
 }
 
 static void
-USL_ShowLoadSave(char *s,char *name)
+USL_ShowLoadSave(id0_char_t *s,id0_char_t *name)
 {
-	word    x,y,
+	id0_word_t    x,y,
 			w,h,
 			tw,sw;
-	char    msg[MaxGameName + 4];
+	id0_char_t    msg[MaxGameName + 4];
 
 	strcpy(msg,"'");
 	strcat(msg,name);
@@ -488,10 +494,10 @@ USL_ShowLoadSave(char *s,char *name)
 	IN_UserInput(100, true);
 }
 
-static boolean
-USL_CtlDialog(char *s1,char *s2,char *s3)
+static id0_boolean_t
+USL_CtlDialog(id0_char_t *s1,id0_char_t *s2,id0_char_t *s3)
 {
-	word            w,h,sh,
+	id0_word_t            w,h,sh,
 				w1,w2,w3,
 				x,y;
 	ScanCode        c;
@@ -553,11 +559,11 @@ USL_CtlDialog(char *s1,char *s2,char *s3)
 	return(c == sc_Y);
 }
 
-static boolean
+static id0_boolean_t
 USL_ConfirmComm(UComm comm)
 {
-	boolean confirm,dialog;
-	char    *s1,*s2,*s3;
+	id0_boolean_t confirm,dialog;
+	id0_char_t    *s1,*s2,*s3;
 
 	if (!comm)
 		Quit("USL_ConfirmComm() - empty comm");
@@ -609,23 +615,25 @@ USL_ConfirmComm(UComm comm)
 //
 ///////////////////////////////////////////////////////////////////////////
 static void
-USL_HandleError(int num)
+USL_HandleError(id0_int_t num)
 {
-	char    buf[64];
+	id0_char_t    buf[64];
 
 	strcpy(buf,"Error: ");
 	if (num < 0)
 		strcat(buf,"Unknown");
 	else if (num == ENOMEM)
 		strcat(buf,"Disk is Full");
-	else if (num == EINVFMT)
+	// FIXME (Chocolate Cat3D): Is that OK?
+	else if (num == 11/*EINVFMT*/)
 		strcat(buf,"File is Incomplete");
 	else
-		strcat(buf,sys_errlist[num]);
+		strerror_r(num, buf+(strlen(buf)+1), sizeof(buf)-(strlen(buf)+1));
+		//strcat(buf,sys_errlist[num]);
 
 	VW_HideCursor();
 
-	USL_CtlDialog(buf,"PRESS ANY KEY",nil);
+	USL_CtlDialog(buf,"PRESS ANY KEY",id0_nil_t);
 	VW_UpdateScreen();
 
 	IN_ClearKeysDown();
@@ -637,10 +645,10 @@ USL_HandleError(int num)
 
 //      Custom routines
 #if 0
-static boolean
-USL_GenericCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_GenericCustom(UserCall call,UserItem id0_far *item)
 {
-	boolean result;
+	id0_boolean_t result;
 
 	result = false;
 	switch (call)
@@ -665,55 +673,55 @@ USL_SetOptionsText(void)
 }
 
 #pragma argsused
-static boolean
-USL_ScoreCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_ScoreCustom(UserCall call,UserItem id0_far *item)
 {
 	if (call != uic_SetupCard)
 		return(false);
 
 	showscorebox ^= true;
 	USL_CtlDialog(showscorebox? "Score box now on" : "Score box now off",
-					"Press any key",nil);
+					"Press any key",id0_nil_t);
 	USL_SetOptionsText();
 	return(true);
 }
 
 #pragma argsused
-static boolean
-USL_CompCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_CompCustom(UserCall call,UserItem id0_far *item)
 {
 	if (call != uic_SetupCard)
 		return(false);
 
 	compatability ^= true;
 	USL_CtlDialog(compatability? "SVGA compatibility now on" : "SVGA compatibility now off",
-					"Press any key",nil);
+					"Press any key",id0_nil_t);
 	USL_SetOptionsText();
 	return(true);
 }
 
 #ifdef  KEEN
 #pragma argsused
-static boolean
-USL_TwoCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_TwoCustom(UserCall call,UserItem id0_far *item)
 {
 	if (call != uic_SetupCard)
 		return(false);
 
 	oldshooting ^= true;
 	USL_CtlDialog(oldshooting? "Two-button firing now on" : "Two-button firing now off",
-					"Press any key",nil);
+					"Press any key",id0_nil_t);
 	USL_SetOptionsText();
 	return(true);
 }
 #endif
 
-static boolean
-USL_ConfigCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_ConfigCustom(UserCall call,UserItem id0_far *item)
 {
-static  char    *CtlNames[] = {"KEYBOARD","KEYBOARD","JOYSTICK #1","JOYSTICK #2","MOUSE"};
-		char    *s;
-		word    w,h,
+static  id0_char_t    *CtlNames[] = {"KEYBOARD","KEYBOARD","JOYSTICK #1","JOYSTICK #2","MOUSE"};
+		id0_char_t    *s;
+		id0_word_t    w,h,
 				tw;
 
 	if (call == uic_TouchupCard)
@@ -734,12 +742,12 @@ static  char    *CtlNames[] = {"KEYBOARD","KEYBOARD","JOYSTICK #1","JOYSTICK #2"
 }
 
 static void
-USL_CKSetKey(UserItem far *item,word i)
+USL_CKSetKey(UserItem id0_far *item,id0_word_t i)
 {
-	boolean         on;
-	word            j;
+	id0_boolean_t         on;
+	id0_word_t            j;
 	ScanCode        scan;
-	longword        time;
+	id0_longword_t        time;
 	CursorInfo      cursorinfo;
 
 	on = false;
@@ -748,7 +756,7 @@ USL_CKSetKey(UserItem far *item,word i)
 	fontcolor = HiliteColor;
 	do
 	{
-		if (TimeCount >= time)
+		if (SD_GetTimeCount() >= time)
 		{
 			on ^= true;
 			VWB_Bar(item->x + 90,item->y,40,8,fontcolor ^ BackColor);
@@ -757,7 +765,7 @@ USL_CKSetKey(UserItem far *item,word i)
 				VWB_DrawTile8(item->x + 90 + 16,item->y,TileBase + 8);
 			VW_UpdateScreen();
 
-			time = TimeCount + (TickBase / 2);
+			time = SD_GetTimeCount() + (TickBase / 2);
 		}
 
 		IN_ReadCursor(&cursorinfo);
@@ -767,11 +775,12 @@ USL_CKSetKey(UserItem far *item,word i)
 			LastScan = sc_Escape;
 		}
 
-	asm     pushf
-	asm     cli
+	//asm     pushf
+	//asm     cli
+	BE_SDL_PollEvents();
 		if (LastScan == sc_LShift)
 			LastScan = sc_None;
-	asm     popf
+	//asm     popf
 	} while (!(scan = LastScan));
 
 	if (scan != sc_Escape)
@@ -787,7 +796,7 @@ USL_CKSetKey(UserItem far *item,word i)
 			}
 		}
 		if (on)
-			USL_CtlDialog("Key already used","Press a key",nil);
+			USL_CtlDialog("Key already used","Press a key",id0_nil_t);
 		else
 			*(KeyMaps[i]) = scan;
 	}
@@ -795,8 +804,8 @@ USL_CKSetKey(UserItem far *item,word i)
 }
 
 #pragma argsused
-static boolean
-USL_KeySCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_KeySCustom(UserCall call,UserItem id0_far *item)
 {
 	if (call == uic_SetupCard)
 		Controls[0] = ctrl_Keyboard;
@@ -804,11 +813,11 @@ USL_KeySCustom(UserCall call,UserItem far *item)
 }
 
 #pragma argsused
-static boolean
-USL_KeyCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_KeyCustom(UserCall call,UserItem id0_far *item)
 {
-	boolean result;
-	word    i;
+	id0_boolean_t result;
+	id0_word_t    i;
 
 	result = false;
 	i = (topcard == &keygroup)? (3 + (item - keyi)) : (item - keybi);
@@ -843,9 +852,9 @@ USL_KeyCustom(UserCall call,UserItem far *item)
 }
 
 static void
-USL_CJDraw(char *s1,char *s2)
+USL_CJDraw(id0_char_t *s1,id0_char_t *s2)
 {
-	word    w,h;
+	id0_word_t    w,h;
 
 	USL_MeasureString(s1,&w,&h);
 	px = CtlPanelSX + ((CtlPanelW - w) / 2);
@@ -859,11 +868,11 @@ USL_CJDraw(char *s1,char *s2)
 	USL_DrawString(s2);
 }
 
-static boolean
-USL_CJGet(word joy,word button,word x,word y,word *xaxis,word *yaxis)
+static id0_boolean_t
+USL_CJGet(id0_word_t joy,id0_word_t button,id0_word_t x,id0_word_t y,id0_word_t *xaxis,id0_word_t *yaxis)
 {
-	boolean         on;
-	longword        time;
+	id0_boolean_t         on;
+	id0_longword_t        time;
 
 	while (IN_GetJoyButtonsDB(joy))
 		if (LastScan == sc_Escape)
@@ -873,10 +882,10 @@ USL_CJGet(word joy,word button,word x,word y,word *xaxis,word *yaxis)
 	time = 0;
 	while (!(IN_GetJoyButtonsDB(joy) & (1 << button)))
 	{
-		if (TimeCount >= time)
+		if (SD_GetTimeCount() >= time)
 		{
 			on ^= true;
-			time = TimeCount + (TickBase / 2);
+			time = SD_GetTimeCount() + (TickBase / 2);
 			VWB_DrawTile8(x,y,TileBase + on);
 			VW_UpdateScreen();
 		}
@@ -888,10 +897,10 @@ USL_CJGet(word joy,word button,word x,word y,word *xaxis,word *yaxis)
 	return(true);
 }
 
-static boolean
-USL_ConfigJoystick(word joy)
+static id0_boolean_t
+USL_ConfigJoystick(id0_word_t joy)
 {
-	word    x,y,
+	id0_word_t    x,y,
 			minx,miny,
 			maxx,maxy;
 
@@ -927,15 +936,15 @@ USL_ConfigJoystick(word joy)
 }
 
 #pragma argsused
-static boolean
-USL_Joy1Custom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_Joy1Custom(UserCall call,UserItem id0_far *item)
 {
 	if (call == uic_SetupCard)
 	{
 		if (USL_ConfigJoystick(0))
 		{
 			Controls[0] = ctrl_Joystick1;
-			USL_CtlDialog("USING JOYSTICK #1","PRESS ANY KEY",nil);
+			USL_CtlDialog("USING JOYSTICK #1","PRESS ANY KEY",id0_nil_t);
 		}
 		return(true);
 	}
@@ -944,15 +953,15 @@ USL_Joy1Custom(UserCall call,UserItem far *item)
 }
 
 #pragma argsused
-static boolean
-USL_Joy2Custom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_Joy2Custom(UserCall call,UserItem id0_far *item)
 {
 	if (call == uic_SetupCard)
 	{
 		if (USL_ConfigJoystick(1))
 		{
 			Controls[0] = ctrl_Joystick2;
-			USL_CtlDialog("USING JOYSTICK #2","PRESS ANY KEY",nil);
+			USL_CtlDialog("USING JOYSTICK #2","PRESS ANY KEY",id0_nil_t);
 		}
 		return(true);
 	}
@@ -961,9 +970,9 @@ USL_Joy2Custom(UserCall call,UserItem far *item)
 }
 
 static void
-USL_DrawFileIcon(UserItem far *item)
+USL_DrawFileIcon(UserItem id0_far *item)
 {
-	word    color;
+	id0_word_t    color;
 
 	item->y = topcard->y + CtlPanelSY + 12;
 	item->y += (item - loadsavegamei) * 11;
@@ -977,10 +986,10 @@ USL_DrawFileIcon(UserItem far *item)
 }
 
 static void
-USL_DoLoadGame(UserItem far *item)
+USL_DoLoadGame(UserItem id0_far *item)
 {
-	char            *filename;
-	word            n,
+	id0_char_t            *filename;
+	id0_word_t            n,
 				err;
 	int                     file;
 	SaveGame        *game;
@@ -1025,11 +1034,11 @@ USL_DoLoadGame(UserItem far *item)
 	USL_DrawCtlPanel();
 }
 
-static boolean
-USL_LoadCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_LoadCustom(UserCall call,UserItem id0_far *item)
 {
-	boolean result;
-	word    i;
+	id0_boolean_t result;
+	id0_word_t    i;
 
 	result = false;
 	switch (call)
@@ -1069,11 +1078,11 @@ USL_LoadCustom(UserCall call,UserItem far *item)
 }
 
 static void
-USL_DoSaveGame(UserItem far *item)
+USL_DoSaveGame(UserItem id0_far *item)
 {
-	boolean         ok;
-	char            *filename;
-	word            n,err;
+	id0_boolean_t         ok;
+	id0_char_t            *filename;
+	id0_word_t            n,err;
 	int         file;
 	SaveGame        *game;
 
@@ -1087,7 +1096,7 @@ USL_DoSaveGame(UserItem far *item)
 	VWB_Bar(item->x + 1,item->y + 2,CtlPanelW - 12 - 2,7,BackColor);
 	game->oldtest = &PrintX;
 	ok = US_LineInput(item->x + 2,item->y + 2,
-						game->name,game->present? game->name : nil,
+						game->name,game->present? game->name : id0_nil_t,
 						true,MaxGameName,
 						CtlPanelW - 22);
 	if (!strlen(game->name))
@@ -1099,7 +1108,7 @@ USL_DoSaveGame(UserItem far *item)
 		filename = USL_GiveSaveName(n);
 		err = 0;
 		file = open(filename,O_CREAT | O_BINARY | O_WRONLY,
-					S_IREAD | S_IWRITE | S_IFREG);
+					/*S_IREAD | S_IWRITE*/ S_IRGRP | S_IWGRP /*| S_IFREG*/);
 		if (file != -1)
 		{
 			if (write(file,game,sizeof(*game)) == sizeof(*game))
@@ -1131,10 +1140,10 @@ USL_DoSaveGame(UserItem far *item)
 	USL_SetupCard();
 }
 
-static boolean
-USL_SaveCustom(UserCall call,UserItem far *item)
+static id0_boolean_t
+USL_SaveCustom(UserCall call,UserItem id0_far *item)
 {
-	word    i;
+	id0_word_t    i;
 
 	switch (call)
 	{
@@ -1159,7 +1168,7 @@ USL_SaveCustom(UserCall call,UserItem far *item)
 #define CPaddleY        (BallMinY + 4)
 #define KPaddleY        (BallMaxY - 2)
 void
-USL_DrawPongScore(word k,word c)
+USL_DrawPongScore(id0_word_t k,id0_word_t c)
 {
 	fontcolor = HiliteColor;
 	PrintY = py = CtlPanelSY + 4;
@@ -1178,16 +1187,16 @@ USL_DrawPongScore(word k,word c)
 void
 USL_PlayPong(void)
 {
-	boolean         ball,killball,revdir,done,lastscore;
-	word            cycle,
+	id0_boolean_t         ball,killball,revdir,done,lastscore;
+	id0_word_t            cycle,
 				x,y,
 				kx,cx,
 				rx,
 				bx,by,
 				kscore,cscore,
 				speedup;
-	int                     bdx,bdy;
-	longword        balltime,waittime;
+	id0_int_t                     bdx,bdy;
+	id0_longword_t        balltime,waittime;
 	CursorInfo      cursorinfo;
 
 	kx = cx = PaddleMinX + ((PaddleMaxX - PaddleMinX) / 2);
@@ -1201,7 +1210,7 @@ USL_PlayPong(void)
 	lastscore = false;
 	do
 	{
-		waittime = TimeCount;
+		waittime = SD_GetTimeCount();
 
 		IN_ReadCursor(&cursorinfo);
 		if (((cursorinfo.x < 0) || IN_KeyDown(sc_LeftArrow)) && (kx > PaddleMinX))
@@ -1212,7 +1221,7 @@ USL_PlayPong(void)
 		if (killball)
 		{
 			ball = false;
-			balltime = TimeCount + TickBase;
+			balltime = SD_GetTimeCount() + TickBase;
 			speedup = 10;
 			killball = false;
 		}
@@ -1256,7 +1265,7 @@ USL_PlayPong(void)
 				USL_DrawPongScore(kscore,cscore);
 				if (cscore == 21)
 				{
-					USL_CtlDialog("You lost!","Press any key",nil);
+					USL_CtlDialog("You lost!","Press any key",id0_nil_t);
 					done = true;
 					continue;
 				}
@@ -1270,7 +1279,7 @@ USL_PlayPong(void)
 				USL_DrawPongScore(kscore,cscore);
 				if (kscore == 21)
 				{
-					USL_CtlDialog("You won!","Press any key",nil);
+					USL_CtlDialog("You won!","Press any key",id0_nil_t);
 					done = true;
 					continue;
 				}
@@ -1319,7 +1328,7 @@ USL_PlayPong(void)
 			}
 			VWB_DrawSprite(x,y,(x & 1)? BALL1PIXELTOTHERIGHTSPR : BALLSPR);
 		}
-		else if (TimeCount >= balltime)
+		else if (SD_GetTimeCount() >= balltime)
 		{
 			ball = true;
 			bdx = 1 - (US_RndT() % 3);
@@ -1330,15 +1339,15 @@ USL_PlayPong(void)
 			by = (BallMinY + ((BallMaxY - BallMinY) / 2)) << 2;
 		}
 		VW_UpdateScreen();
-		while (waittime == TimeCount)
+		while (waittime == SD_GetTimeCount())
 			;       // DEBUG - do adaptiveness
 	} while ((LastScan != sc_Escape) && !done);
 	IN_ClearKeysDown();
 }
 
 #pragma argsused
-static boolean
-USL_PongCustom(UserCall call,struct UserItem far *item)
+static id0_boolean_t
+USL_PongCustom(UserCall call,struct UserItem id0_far *item)
 {
 	if (call != uic_SetupCard)
 		return(false);
@@ -1354,9 +1363,9 @@ USL_PongCustom(UserCall call,struct UserItem far *item)
 
 //      Flag management stuff
 static void
-USL_ClearFlags(UserItemGroup far *node)
+USL_ClearFlags(UserItemGroup id0_far *node)
 {
-	UserItem        far *i;
+	UserItem        id0_far *i;
 
 	if (!node->items)
 		return;
@@ -1365,15 +1374,15 @@ USL_ClearFlags(UserItemGroup far *node)
 	{
 		i->flags &= ~UISelectFlags;
 		if (i->child)
-			USL_ClearFlags((UserItemGroup far *)i->child);
+			USL_ClearFlags((UserItemGroup id0_far *)i->child);
 	}
 }
 
-static int
-USL_FindPushedItem(UserItemGroup far *group)
+static id0_int_t
+USL_FindPushedItem(UserItemGroup id0_far *group)
 {
-	word            i;
-	UserItem        far *item;
+	id0_word_t            i;
+	UserItem        id0_far *item;
 
 	for (item = group->items,i = 0;item->type != uii_Bad;item++,i++)
 		if (item->flags & ui_Pushed)
@@ -1382,9 +1391,9 @@ USL_FindPushedItem(UserItemGroup far *group)
 }
 
 static void
-USL_SelectItem(UserItemGroup far *group,word index,boolean draw)
+USL_SelectItem(UserItemGroup id0_far *group,id0_word_t index,id0_boolean_t draw)
 {
-	UserItem        far *item;
+	UserItem        id0_far *item;
 
 	if (index != group->cursor)
 	{
@@ -1402,10 +1411,10 @@ USL_SelectItem(UserItemGroup far *group,word index,boolean draw)
 }
 
 static void
-USL_PushItem(UserItemGroup far *group,word index,boolean draw)
+USL_PushItem(UserItemGroup id0_far *group,id0_word_t index,id0_boolean_t draw)
 {
-	word            i;
-	UserItem        far *item;
+	id0_word_t            i;
+	UserItem        id0_far *item;
 
 	USL_SelectItem(group,index,draw);
 	for (item = group->items,i = 0;item->type != uii_Bad;item++,i++)
@@ -1456,12 +1465,12 @@ USL_SetupCard(void)
 }
 
 static void
-USL_DownLevel(UserItemGroup far *group)
+USL_DownLevel(UserItemGroup id0_far *group)
 {
 	if (!group)
 		Quit("USL_DownLevel() - nil card");
 	USL_PushCard(group);
-	if (group->custom && group->custom(uic_SetupCard,nil))
+	if (group->custom && group->custom(uic_SetupCard,id0_nil_t))
 		USL_PopCard();
 	USL_SetupCard();
 }
@@ -1485,7 +1494,7 @@ static void
 USL_DoItem(void)
 {
 	// DEBUG - finish this routine
-	UserItem                far *item;
+	UserItem                id0_far *item;
 
 	item = &topcard->items[topcard->cursor];
 	if (item->flags & ui_Disabled)
@@ -1544,7 +1553,7 @@ USL_SetControlValues(void)
 static void
 USL_SetUpCtlPanel(void)
 {
-	int     i;
+	id0_int_t     i;
 
 	// Cache in all of the stuff for the control panel
 	CA_UpLevel();
@@ -1610,7 +1619,7 @@ USL_HandleComm(UComm comm)
 static void
 USL_GetControlValues(void)
 {
-	int     i;
+	id0_int_t     i;
 
 	// DEBUG - write the rest of this
 	i = USL_FindPushedItem(&soundgroup);
@@ -1650,7 +1659,7 @@ USL_TearDownCtlPanel(void)
 			US_PrintCentered("Quitting...");
 			fontcolor = F_BLACK;
 			VW_UpdateScreen();
-			Quit(nil);
+			Quit(id0_nil_t);
 		}
 	}
 
@@ -1672,11 +1681,11 @@ US_ControlPanel(void)
 {
 extern void HelpScreens(void);
 
-	boolean         resetitem,on;
-	word            i;
-	int                     ydelta;
-	longword        flashtime;
-	UserItem        far *item;
+	id0_boolean_t         resetitem,on;
+	id0_word_t            i;
+	id0_int_t                     ydelta;
+	id0_longword_t        flashtime;
+	UserItem        id0_far *item;
 	CursorInfo      cursorinfo;
 
 #if 0
@@ -1704,11 +1713,11 @@ extern void HelpScreens(void);
 
 		if (resetitem)
 		{
-			flashtime = TimeCount + (TickBase / 2);
+			flashtime = SD_GetTimeCount() + (TickBase / 2);
 			resetitem = false;
 		}
 
-		if (TimeCount >= flashtime)
+		if (SD_GetTimeCount() >= flashtime)
 		{
 			on ^= true;
 			resetitem = true;

@@ -88,7 +88,7 @@ statetype s_goalbonus = {NEMESISPIC,0,NULL,&s_goalbonus};
 ===============
 */
 
-void SpawnBonus (int tilex, int tiley, int number)
+void SpawnBonus (id0_int_t tilex, id0_int_t tiley, id0_int_t number)
 {
 	statetype *state;
 
@@ -154,12 +154,12 @@ statetype s_walldie6 = {0,-1,T_WallDie,NULL};
 ================
 */
 
-void ExplodeWall (int tilex, int tiley)
+void ExplodeWall (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj (tilex,tiley,&s_walldie1,0);
 	new->obclass = inertobj;
 	new->active = true;
-	(unsigned)actorat[new->tilex][new->tiley] = tilemap[new->tilex][new->tiley] =
+	(id0_unsigned_t)actorat[new->tilex][new->tiley] = tilemap[new->tilex][new->tiley] =
 	*(mapsegs[0]+farmapylookup[new->tiley]+new->tilex) = WALLEXP;
 }
 
@@ -174,14 +174,14 @@ void ExplodeWall (int tilex, int tiley)
 
 void T_WallDie (objtype *ob)
 {
-	unsigned tile,other;
+	id0_unsigned_t tile,other;
 
 	if (++ob->temp1 == 3)
 		tile = 0;
 	else
 		tile = WALLEXP-1 + ob->temp1;
 
-	(unsigned)actorat[ob->tilex][ob->tiley] = tilemap[ob->tilex][ob->tiley] =
+	(id0_unsigned_t)actorat[ob->tilex][ob->tiley] = tilemap[ob->tilex][ob->tiley] =
 	*(mapsegs[0]+farmapylookup[ob->tiley]+ob->tilex) = tile;
 
 	if (ob->temp1 == 1)
@@ -190,16 +190,16 @@ void T_WallDie (objtype *ob)
 	// blow up nearby walls
 	//
 		other = tilemap[ob->tilex-1][ob->tiley];
-		if ((unsigned)(other-EXPWALLSTART)<NUMEXPWALLS)
+		if ((id0_unsigned_t)(other-EXPWALLSTART)<NUMEXPWALLS)
 			ExplodeWall (ob->tilex-1,ob->tiley);
 		other = tilemap[ob->tilex+1][ob->tiley];
-		if ((unsigned)(other-EXPWALLSTART)<NUMEXPWALLS)
+		if ((id0_unsigned_t)(other-EXPWALLSTART)<NUMEXPWALLS)
 			ExplodeWall (ob->tilex+1,ob->tiley);
 		other = tilemap[ob->tilex][ob->tiley-1];
-		if ((unsigned)(other-EXPWALLSTART)<NUMEXPWALLS)
+		if ((id0_unsigned_t)(other-EXPWALLSTART)<NUMEXPWALLS)
 			ExplodeWall (ob->tilex,ob->tiley-1);
 		other = tilemap[ob->tilex][ob->tiley+1];
-		if ((unsigned)(other-EXPWALLSTART)<NUMEXPWALLS)
+		if ((id0_unsigned_t)(other-EXPWALLSTART)<NUMEXPWALLS)
 			ExplodeWall (ob->tilex,ob->tiley+1);
 	}
 }
@@ -243,7 +243,7 @@ statetype s_fgate4 = {WARP4PIC,6,T_Gate,&s_fgate1};
 ===============
 */
 
-void SpawnWarp (int tilex, int tiley, int type)
+void SpawnWarp (id0_int_t tilex, id0_int_t tiley, id0_int_t type)
 {
 	if (type)
 		SpawnNewObj (tilex,tiley,&s_fgate1,TILEGLOBAL/3);
@@ -266,9 +266,9 @@ void SpawnWarp (int tilex, int tiley, int type)
 
 void T_Gate (objtype *ob)
 {
-	int	spot;
+	id0_int_t	spot;
 	objtype *check;
-	unsigned	temp;
+	id0_unsigned_t	temp;
 
 	if (CheckHandAttack (ob) && !playstate)
 	{
@@ -368,7 +368,7 @@ statetype s_trolldie3 = {TROLLDIE3PIC,0,NULL,&s_trolldie3};
 ===============
 */
 
-void SpawnTroll (int tilex, int tiley)
+void SpawnTroll (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_troll1,40*PIXRADIUS);
 	new->speed = 2500;
@@ -453,7 +453,7 @@ statetype s_orcdie3 = {ORCDIE3PIC,0,NULL,&s_orcdie3};
 ===============
 */
 
-void SpawnOrc (int tilex, int tiley)
+void SpawnOrc (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_orc1,PIXRADIUS*32);
 	new->obclass = orcobj;
@@ -538,7 +538,7 @@ statetype s_demondie3 = {DEMONDIE3PIC,0,NULL,&s_demondie3};
 ===============
 */
 
-void SpawnDemon (int tilex, int tiley)
+void SpawnDemon (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_demon1,TILEGLOBAL/2);
 	new->obclass = demonobj;
@@ -600,7 +600,7 @@ statetype s_mshot2 = {PSHOT2PIC,8,&T_Mshot,&s_mshot1};
 void T_Mshot (objtype *ob)
 {
 	objtype	*check;
-	long	xmove,ymove,speed;
+	id0_long_t	xmove,ymove,speed;
 
 	xmove = ymove = 0;
 
@@ -714,7 +714,7 @@ statetype s_magedie2 = {MAGEDIE2PIC,0,NULL,&s_magedie2};
 ===============
 */
 
-void SpawnMage (int tilex, int tiley)
+void SpawnMage (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_mage1,TILEGLOBAL/2);
 	new->obclass = mageobj;
@@ -842,7 +842,7 @@ statetype s_greldie6 = {GRELDIE6PIC,0,NULL,&s_greldie6};
 ===============
 */
 
-void SpawnNemesis (int tilex, int tiley)
+void SpawnNemesis (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_grel1,PIXRADIUS*56);
 	new->obclass = grelmobj;
@@ -948,7 +948,7 @@ statetype s_batdie2 = {BATDIE2PIC,8,NULL,NULL};
 ===============
 */
 
-void SpawnBat (int tilex, int tiley)
+void SpawnBat (id0_int_t tilex, id0_int_t tiley)
 {
 	SpawnNewObj(tilex,tiley,&s_bat1,PIXRADIUS*24);
 	new->obclass =batobj;
@@ -969,7 +969,7 @@ void SpawnBat (int tilex, int tiley)
 
 void BatChaseThink (objtype *obj)
 {
-	int deltax,deltay;
+	id0_int_t deltax,deltay;
 
 	deltax=player->tilex - obj->tilex;
 	deltay=player->tiley - obj->tiley;
@@ -1004,7 +1004,7 @@ void BatChaseThink (objtype *obj)
 
 void BatRunThink (objtype *obj)
 {
-	int deltax,deltay;
+	id0_int_t deltax,deltay;
 
 	deltax=player->tilex - obj->tilex;
 	deltay=player->tiley - obj->tiley;
@@ -1043,11 +1043,11 @@ void BatRunThink (objtype *obj)
 
 void T_Bat (objtype *ob)
 {
-	long move;
-	long deltax,deltay,size;
+	id0_long_t move;
+	id0_long_t deltax,deltay,size;
 
 	move = ob->speed*tics;
-	size = (long)ob->size + player->size + move;
+	size = (id0_long_t)ob->size + player->size + move;
 
 
 	do
@@ -1072,8 +1072,8 @@ void T_Bat (objtype *ob)
 		if (ob->dir == nodir)
 			ob->dir = north;
 
-		ob->x = ((long)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
-		ob->y = ((long)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
+		ob->x = ((id0_long_t)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
+		ob->y = ((id0_long_t)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
 		move -= ob->distance;
 
 		if (ob->temp1)
@@ -1104,8 +1104,8 @@ void T_Bat (objtype *ob)
 
 void T_BatPast (objtype *ob)
 {
-	long move;
-	long deltax,deltay,size;
+	id0_long_t move;
+	id0_long_t deltax,deltay,size;
 
 	move = ob->speed*tics;
 
@@ -1118,8 +1118,8 @@ void T_BatPast (objtype *ob)
 		}
 		actorat[ob->tilex][ob->tiley] = 0;	// pick up marker from goal
 
-		ob->x = ((long)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
-		ob->y = ((long)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
+		ob->x = ((id0_long_t)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
+		ob->y = ((id0_long_t)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
 		move -= ob->distance;
 
 		BatRunThink (ob);
@@ -1161,7 +1161,7 @@ statetype s_bounce2 = {BIGPSHOT2PIC,8,T_Bounce,&s_bounce1};
 ===============
 */
 
-void SpawnBounce (int tilex, int tiley, boolean towest)
+void SpawnBounce (id0_int_t tilex, id0_int_t tiley, id0_boolean_t towest)
 {
 	SpawnNewObj(tilex,tiley,&s_bounce1,24*PIXRADIUS);
 	new->obclass = bounceobj;
@@ -1182,11 +1182,11 @@ void SpawnBounce (int tilex, int tiley, boolean towest)
 
 void T_Bounce (objtype *ob)
 {
-	long move;
-	long deltax,deltay,size;
+	id0_long_t move;
+	id0_long_t deltax,deltay,size;
 
 	move = SPDBOUNCE*tics;
-	size = (long)ob->size + player->size + move;
+	size = (id0_long_t)ob->size + player->size + move;
 
 	while (move)
 	{
@@ -1207,8 +1207,8 @@ void T_Bounce (objtype *ob)
 		}
 		actorat[ob->tilex][ob->tiley] = 0;	// pick up marker from goal
 
-		ob->x = ((long)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
-		ob->y = ((long)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
+		ob->x = ((id0_long_t)ob->tilex<<TILESHIFT)+TILEGLOBAL/2;
+		ob->y = ((id0_long_t)ob->tiley<<TILESHIFT)+TILEGLOBAL/2;
 		move -= ob->distance;
 
 		//
